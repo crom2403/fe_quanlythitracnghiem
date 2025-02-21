@@ -1,9 +1,9 @@
-import Button from '@mui/material/Button';
+import stu from '../../assets/images/STUimage.png';
 
 const Home = () => {
   return (
-    <div>
-      <Button variant="contained">Hello world</Button>; Home
+    <div className='flex w-auto h-auto items-center justify-center'>
+      <img src={stu} alt='stu' className='h-auto w-3/4' />
     </div>
   );
 };
