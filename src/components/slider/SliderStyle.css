@@ -1,0 +1,46 @@
+/* SliderStyle.css */
+.slider-container {
+  width: 100%;  
+  position: relative;
+  overflow: hidden;
+}
+
+.slide {
+  min-width: 100%; /* Đảm bảo mỗi slide chiếm toàn bộ chiều rộng */
+  transition: transform 0.5s ease; /* Thêm hiệu ứng chuyển động */
+}
+
+.slide-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Các mũi tên điều hướng */
+.text-3xl {
+  font-size: 2rem;
+}
+
+/* Dấu ba chấm điều hướng */
+.space-x-2 span {
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
+
+.space-x-2 span:hover {
+  opacity: 0.7;
+}
+
+/* Các mũi tên */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Đảm bảo dấu ba chấm có thể thay đổi màu */
+.bg-blue-500 {
+  background-color: #3b82f6;
+}
+
+.bg-gray-800 {
+  background-color: #2d2d2d;
+}

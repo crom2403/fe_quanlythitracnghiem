@@ -1,5 +1,5 @@
-import stu from '../../assets/images/STUimage.png';
 
+import stu from '../../assets/images/stuimage.png';
 const Home = () => {
   return (
     <div className='flex w-auto h-auto items-center justify-center'>
