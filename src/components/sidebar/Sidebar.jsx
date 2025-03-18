@@ -8,31 +8,42 @@ import {
   CheckCircleIcon,
   BellIcon,
 } from '@heroicons/react/outline';
+import { Link } from 'react-router-dom';
+import path from '../../utils/path';
+import { useState } from 'react';
 
 const Sitebar = () => {
+  const [activeLink, setActiveLink] = useState(null);
+  const handleLinkClick = (link) =>{
+    setActiveLink(link);
+  }
+
+  const getLinkClass = (link) =>{
+    return activeLink === link ? 'bg-red-700 text-white':'text-black hover:bg-red-700 hover:text-white'
+  };
+
   return (
-    <div className="w-full h-full bg-white-200">
-      <div className="flex items-center justify-center h-1/4 bg-red-700 text-white">
-        <h1
-          className="text-2xl font-bold"
-          style={{ fontFamily: 'Playfair Display' }}
-        >
-          STU Test
-        </h1>
+    <div
+      className="w-full h-full bg-white-200"
+      style={{ fontFamily: 'Playfair Display' }}
+    >
+      <div className="flex items-center justify-center h-16 bg-red-700 text-white">
+        <h1 className="text-2xl font-bold">STU Test</h1>
       </div>
-      <div className="mt-4 w-9/10 mx-auto text-lg font-semibold flex items-center bg-black rounded text-white">
+      <div className="mt-10 pt-2 pb-2 w-9/10 mx-auto text-lg font-semibold flex items-center bg-black rounded-xl text-white">
         <ViewGridIcon className="h-6 w-6 text-white mr-2 pl-2" />
         Tổng quan
       </div>
 
       <div className="flex flex-col p-4 space-y-2">
-        <a
-          href="#"
-          className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+        <Link
+          to={path.GROUP}
+          onClick={()=>handleLinkClick(path.GROUP)}
+          className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.GROUP)}`}
         >
           <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
           Nhóm học phần
-        </a>
+        </Link>
         <a
           href="#"
           className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
@@ -49,7 +60,6 @@ const Sitebar = () => {
           <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
           Câu hỏi
         </a>
-
         <a
           href="#"
           className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"

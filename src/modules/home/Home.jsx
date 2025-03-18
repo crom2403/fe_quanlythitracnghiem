@@ -1,9 +1,9 @@
 
-import stu from '../../assets/images/stuimage.png';
+import stu from '../../assets/images/image.png';
 const Home = () => {
   return (
-    <div className='flex w-auto h-auto items-center justify-center'>
-      <img src={stu} alt='stu' className='h-auto w-3/4' />
+    <div className='flex w-auto h-auto items-center justify-center bg-gray-100'>
+      <img src={stu} alt='stu' className='h-auto w-9/10 mt-8 mb-8' />
     </div>
   );
 };

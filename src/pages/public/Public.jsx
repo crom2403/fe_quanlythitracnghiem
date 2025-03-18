@@ -17,11 +17,11 @@ const Public = () => {
           <Sitebar />
         </div>
       )}
-      <div className={`flex flex-col ${isPublicPage ? 'w-full' : 'w-5/6'}`}>
-        <Header className={` ${isPublicPage ? 'w-full' : ''}`} />
+      <div className={`flex flex-col items-center ${isPublicPage ? 'w-full' : 'w-5/6'}`}>
+        <Header/>
         {isPublicPage && <Community />}
+        <Outlet/>
         <Footer />
-        <Outlet />
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import {FaFacebook} from 'react-icons/fa';
 const Footer = () => {
   return (
     <div
-      className="flex w-screen h-auto mt-auto bg-black text-white justify-center"
+      className="flex w-full h-auto mt-auto bg-black text-white justify-center"
       style={{ fontFamily: 'PlayFair Display' }}
     >
       <div className="w-1/4 mt-4">
@@ -15,7 +15,7 @@ const Footer = () => {
           <p className='mt-2'>Điều khoản sử dụng</p>
         </a>
         <a href="#" className="">
-          <p className='mt-2'>Hướng dẫn</p>
+          <p className='mt-2 mb-4'>Hướng dẫn</p>
         </a>
       </div>
       <div className="w-1/4 mt-4">

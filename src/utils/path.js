@@ -1,6 +1,6 @@
 const path = {
   PUBLIC: '/',
-  HOME: '/home',
+  HOME: '/dashboard',
   LOGIN: '/login',
   MODULE: '/module',
   MODULE_DETAIL: '/module/detail',
@@ -10,6 +10,8 @@ const path = {
   ASSIGNMENT: '/assignment',
   TEST: '/test',
   NOTIFICATION: '/notification',
+  GROUP: '/dashboard/group',
+  GROUPDETAIL:'/dashboard/group/detail',
 };
 
 export default path;
