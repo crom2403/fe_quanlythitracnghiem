@@ -1,11 +1,34 @@
 import '../../styles/loginStyle.css'; // Import file CSS
+import {login} from './loginService';
+import {useState} from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+  const [mssv, setMssv] = useState('');
+  const [pwd, setPwd] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+  
+  const handleSubmit = async (e) =>{
+    e.preventDefault();
+    const result = await login(mssv, pwd);
+    if(result.success){
+      setIsLoggedIn(true);
+      sessionStorage.setItem('role',result.role);
+      sessionStorage.setItem('loggedIn',true);
+      navigate('/dashboard');
+    }
+    else{
+      alert('Thông tin đăng nhập không đúng');
+    }
+  }
   return (
     <div className="flex items-center justify-center w-full h-screen animate-gradient-bg">
       <form
+        onSubmit={handleSubmit}
         className="flex flex-col items-center bg-white p-8 rounded-lg shadow-lg w-[30rem] h-[35rem]"
-        style={{ fontFamily: 'Plaayfair Display' }}
+        style={{ fontFamily: 'Plaayfair Display' }
+        }
       >
         <h2 className="text-4xl font-bold mb-6 text-center text-blue-900">
           LOGIN
@@ -15,7 +38,10 @@ const Login = () => {
         </label>
         <input
           type="text"
+          value={mssv}
+          onChange={(e)=>setMssv(e.target.value)}
           className="border w-9/10 p-2 rounded-md mt-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xl"
+          required
         ></input>
 
         <label className="block text-blue-700 text-left w-full mb-2 mt-2 ml-10 text-xl">
@@ -23,7 +49,10 @@ const Login = () => {
         </label>
         <input
           type="password"
+          value={pwd}
+          onChange={(e)=>setPwd(e.target.value)}
           className="border w-9/10 p-2 rounded-md mt-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xl"
+          required
         ></input>
 
         <input

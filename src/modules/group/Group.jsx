@@ -45,14 +45,13 @@ const Group = () => {
   ];
 
   const toggleMenu = (groupIndex, subGroupIndex) => {
-    // Kiểm tra nếu nhóm con đã được mở, thì đóng lại, ngược lại mở nhóm con đó
     if (
       visibleMenu.groupIndex === groupIndex &&
       visibleMenu.subGroupIndex === subGroupIndex
     ) {
-      setVisibleMenu({ groupIndex: null, subGroupIndex: null }); // Đóng menu nếu cùng nhóm con
+      setVisibleMenu({ groupIndex: null, subGroupIndex: null }); 
     } else {
-      setVisibleMenu({ groupIndex, subGroupIndex }); // Mở menu của nhóm con
+      setVisibleMenu({ groupIndex, subGroupIndex });
     }
   };
 
