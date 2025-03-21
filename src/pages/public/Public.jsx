@@ -11,16 +11,16 @@ const Public = () => {
   const isPublicPage = location.pathname === path.PUBLIC;
 
   return (
-    <div className="w-full h-screen flex">
+    <div className="w-full min-h-screen flex">
       {!isPublicPage && (
         <div className="w-1/6">
           <Sitebar />
         </div>
       )}
-      <div className={`flex flex-col items-center ${isPublicPage ? 'w-full' : 'w-5/6'}`}>
-        <Header/>
+      <div className={`flex flex-col flex-grow items-center ${isPublicPage ? 'w-full' : 'w-5/6'}`}>
+        <Header />
         {isPublicPage && <Community />}
-        <Outlet/>
+        <Outlet />
         <Footer />
       </div>
     </div>

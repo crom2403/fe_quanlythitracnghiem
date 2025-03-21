@@ -14,7 +14,6 @@ const Group = () => {
   const handleLinkClick = (link) =>{
     setActiveLink(link);
   }
-  // Lưu trạng thái của menu đang hiển thị, đây là một đối tượng chứa index của nhóm và index của nhóm con
   const [visibleMenu, setVisibleMenu] = useState({
     groupIndex: null,
     subGroupIndex: null,
@@ -103,7 +102,6 @@ const Group = () => {
                       onClick={() => toggleMenu(groupIndex, subGroupIndex)}
                     >
                       <CogIcon className="w-5 h-5 text-black" />
-                      {/* Hiển thị menu chỉ khi visibleMenu trùng với cả nhóm và nhóm con */}
                       {visibleMenu.groupIndex === groupIndex &&
                         visibleMenu.subGroupIndex === subGroupIndex && (
                           <ul className="ml-4 absolute bg-white shadow-lg rounded-lg mt-2 p-2 w-auto border-2 border-gray-200 text-black">

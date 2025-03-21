@@ -4,7 +4,6 @@ const path = {
   LOGIN: '/login',
   MODULE: '/module',
   MODULE_DETAIL: '/module/detail',
-  QUESTION: '/question',
   USER: '/user',
   SUBJECT: '/subject',
   ASSIGNMENT: '/assignment',
@@ -12,6 +11,8 @@ const path = {
   NOTIFICATION: '/notification',
   GROUP: '/dashboard/group',
   GROUPDETAIL:'/dashboard/group/detail',
+  EXAMPAPER:'/dashboard/group/detail/exampaper',
+  QUESTION: '/dashboard/question',
 };
 
 export default path;

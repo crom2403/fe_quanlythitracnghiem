@@ -7,6 +7,7 @@ import Module from './modules/module/Module';
 import Login from './modules/login/Login';
 import Group from './modules/group/Group';
 import GroupDetail from './modules/groupdetail/GroupDetail';
+import ExamPaper from './modules/exampaper/ExamPaper';
 
 function App() {
   return (
@@ -20,6 +21,10 @@ function App() {
             <Route
               path={path.GROUPDETAIL.substring(1)}
               element={<GroupDetail />}
+            />
+            <Route
+              path={path.EXAMPAPER.substring(1)}
+              element={<ExamPaper />}
             />
             <Route path={path.TEST.substring(1)} element={<Home />} />
             <Route path={path.MODULE.substring(1)} element={<Module />} />
