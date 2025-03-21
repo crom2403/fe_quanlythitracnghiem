@@ -53,6 +53,16 @@ const Sitebar = () => {
             <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Nhóm học phần
           </Link>
+          <Link
+            to={path.QUESTION}
+            onClick={() => handleLinkClick(path.QUESTION)}
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            {/* lớp transform cho phép các hiệu ứng biến đổi như scale, rotate, translate,...*/}
+            {/* transition-all áp dụng hiệu ứng chuyển tiếp cho tất cả các thuộc tính có thể thay đổi, tạo hiệu ứng mượt mà */}
+            <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Câu hỏi
+          </Link>
           <a
             href="#"
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
@@ -60,15 +70,7 @@ const Sitebar = () => {
             <UserIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Thông tin cá nhân
           </a>
-          <a
-            href="#"
-            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
-          >
-            {/* lớp transform cho phép các hiệu ứng biến đổi như scale, rotate, translate,...*/}
-            {/* transition-all áp dụng hiệu ứng chuyển tiếp cho tất cả các thuộc tính có thể thay đổi, tạo hiệu ứng mượt mà */}
-            <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
-            Câu hỏi
-          </a>
+          
           <a
             href="#"
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"

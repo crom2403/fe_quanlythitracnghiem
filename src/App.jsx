@@ -8,6 +8,7 @@ import Login from './modules/login/Login';
 import Group from './modules/group/Group';
 import GroupDetail from './modules/groupdetail/GroupDetail';
 import ExamPaper from './modules/exampaper/ExamPaper';
+import Question from './modules/question/Question';
 
 function App() {
   return (
@@ -25,6 +26,10 @@ function App() {
             <Route
               path={path.EXAMPAPER.substring(1)}
               element={<ExamPaper />}
+            />
+            <Route
+              path={path.QUESTION.substring(1)}
+              element={<Question />}
             />
             <Route path={path.TEST.substring(1)} element={<Home />} />
             <Route path={path.MODULE.substring(1)} element={<Module />} />
