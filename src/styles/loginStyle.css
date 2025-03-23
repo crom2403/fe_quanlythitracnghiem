@@ -1,0 +1,14 @@
+@keyframes gradient-bg {
+  0% {
+    background-position: 0% 50%; /* Bắt đầu từ trái */
+  }
+  100% {
+    background-position: 100% 50%; /* Di chuyển hết sang phải */
+  }
+}
+
+.animate-gradient-bg {
+  background: linear-gradient(45deg, #99FFFF, #00FFFF, #CC99FF,#6699FF,#009999,#336666, #000099, #000033); /* Gradient với 2 cặp màu sắc */
+  background-size: 200% 400%; /* Tăng kích thước gradient để di chuyển mượt mà */
+  animation: gradient-bg 60s linear infinite; /* Tạo hiệu ứng chuyển động vô tận */
+}

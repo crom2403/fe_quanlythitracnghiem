@@ -1,6 +1,6 @@
 const path = {
   PUBLIC: '/',
-  HOME: '',
+  HOME: '/home',
   LOGIN: '/login',
   MODULE: '/module',
   MODULE_DETAIL: '/module/detail',
