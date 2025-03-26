@@ -4,7 +4,7 @@ const path = {
   LOGIN: '/login',
   MODULE: '/module',
   MODULE_DETAIL: '/module/detail',
-  USER: '/user',
+  USER: '/dashboard/user',
   SUBJECT: '/subject',
   ASSIGNMENT: '/assignment',
   TEST: '/test',

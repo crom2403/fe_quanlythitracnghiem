@@ -9,6 +9,7 @@ import Group from './modules/group/Group';
 import GroupDetail from './modules/groupdetail/GroupDetail';
 import ExamPaper from './modules/exampaper/ExamPaper';
 import Question from './modules/question/Question';
+import User from './modules/user/User';
 
 function App() {
   return (
@@ -23,19 +24,15 @@ function App() {
               path={path.GROUPDETAIL.substring(1)}
               element={<GroupDetail />}
             />
-            <Route
-              path={path.EXAMPAPER.substring(1)}
-              element={<ExamPaper />}
-            />
-            <Route
-              path={path.QUESTION.substring(1)}
-              element={<Question />}
-            />
+            <Route path={path.EXAMPAPER.substring(1)} element={<ExamPaper />} />
+            <Route path={path.QUESTION.substring(1)} element={<Question />} />
+            <Route path={path.USER.substring(1)} element={<User />} />
             <Route path={path.TEST.substring(1)} element={<Home />} />
             <Route path={path.MODULE.substring(1)} element={<Module />} />
             <Route path={path.QUESTION.substring(1)} element={<Home />} />
             <Route path={path.SUBJECT.substring(1)} element={<Home />} />
           </Route>
+          
           <Route path={path.LOGIN} element={<Login />} />
         </Routes>
       </Router>

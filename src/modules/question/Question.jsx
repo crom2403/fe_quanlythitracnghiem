@@ -10,8 +10,8 @@ import { useState, useEffect } from 'react';
 import CustomModal from '../../components/modal/CustomModal';
 import CustomButton from '../../components/button/CustomButton';
 import { Radio } from '@mui/material';
-import CustomObjArrayFilter from '../../components/filter/CustomArrayFilter';
 
+// Danh sách môn học, chương, độ khó
 const subjects = [
   'Tất cả',
   'Cấu trúc dữ liệu và giải thuật',
@@ -19,22 +19,25 @@ const subjects = [
   'Nhập môn lập trình',
 ];
 const chapters = ['Tất cả', 'Chương 1', 'Chương 2', 'Chương 3'];
+const levels = ['Tất cả', 'Dễ', 'Trung bình', 'Khó'];
+
+// Dữ liệu mặc định với id duy nhất
 const defaultQuestions = [
   {
+    id: 'q1',
     question: 'Câu hỏi 1',
     subjectIndex: 1,
     chapterIndex: 1,
     levelIndex: 3,
   },
   {
+    id: 'q2',
     question: 'Câu hỏi 2',
     subjectIndex: 3,
     chapterIndex: 3,
     levelIndex: 1,
   },
 ];
-const levels = ['Tất cả', 'Dễ', 'Trung bình', 'Khó'];
-const defaultFilterQuestions = CustomObjArrayFilter(defaultQuestions);
 
 const Question = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -46,20 +49,12 @@ const Question = () => {
   const [questionContent, setQuestionContent] = useState('');
   const [questionChapterIndex, setQuestionChapterIndex] = useState(0);
   const [questionSubjectIndex, setQuestionSubjectIndex] = useState(0);
-  const [questionCorrectAnswerIndex, setQuestionCorrectAnswerIndex] =
-    useState(-1);
-  const [listQuestion, setListQuestion] = useState(defaultFilterQuestions);
-  const [isRequestChangeQuestions, setIsRequestedChangeQuestions] =
-    useState(true);
-  const [selectedLevelIndex, setSelectedLevelIndex] = useState(0);
+  const [questionCorrectAnswerIndex, setQuestionCorrectAnswerIndex] = useState(-1);
+  const [listQuestion, setListQuestion] = useState(defaultQuestions);
+  const [selectedLevelIndex, setSelectedLevelIndex] = useState(0); // Thêm lại selectedLevelIndex
   const [expandedIndex, setExpandedIndex] = useState(null);
-  const [deleteQuestionIndex, setDeleteQuestionIndex] = useState(-1);
-  const [updateQuestionIndex, setUpdateQuestionIndex] = useState(-1);
-  const [isRequestedClearTextarea, setIsRequestedClearTextarea] =
-    useState(false);
-  const [toggleQuestions, setToggleQuestions] = useState(
-    defaultFilterQuestions
-  );
+  const [updateQuestionId, setUpdateQuestionId] = useState(null);
+  const [isRequestedClearTextarea, setIsRequestedClearTextarea] = useState(false);
 
   const toggleExpand = (index) => {
     setExpandedIndex(index);
@@ -94,9 +89,9 @@ const Question = () => {
     setAnswerContent(content);
   };
 
-  const addNewAnswer = (answer) => {
+  const addNewAnswer = () => {
     if (answerContent) {
-      setListAnswer((prevList) => [...prevList, answer]);
+      setListAnswer((prevList) => [...prevList, answerContent]);
       setAnswerContent('');
     }
   };
@@ -106,16 +101,21 @@ const Question = () => {
   };
 
   const addNewQuestion = (question, chapterIndex, subjectIndex, levelIndex) => {
-    if (!questionContent || chapterIndex === 0 || subjectIndex === 0) {
+    if (!question || chapterIndex === 0 || subjectIndex === 0) {
       alert('Vui lòng chọn đủ thông tin');
       return;
     }
-    const newQuestion = { question, chapterIndex, subjectIndex, levelIndex };
+    const newQuestion = {
+      id: `q${Date.now()}`, // Tạo id duy nhất dựa trên timestamp
+      question,
+      chapterIndex,
+      subjectIndex,
+      levelIndex,
+    };
 
     setListQuestion((prevList) => [...prevList, newQuestion]);
     setIsRequestedClearTextarea(true);
     setListAnswer([]);
-    setIsRequestedChangeQuestions(true);
     alert('Đã thêm câu hỏi');
   };
 
@@ -127,44 +127,48 @@ const Question = () => {
     setQuestionChapterIndex(parseInt(event.target.value));
   };
 
-  const handleLevleChange = (event) => {
+  const handleLevelChange = (event) => {
     setSelectedLevelIndex(parseInt(event.target.value));
   };
 
-  const handelDeleteQuesion = (questions, index) => {
-    setDeleteQuestionIndex(index);
-    const updatedQuestions = [...questions];
-    updatedQuestions.splice(index, 1);
+  const handleDeleteQuestion = (questionId) => {
+    const updatedQuestions = listQuestion.filter((q) => q.id !== questionId);
     setListQuestion(updatedQuestions);
-    setIsRequestedChangeQuestions(true);
+
+    // Nếu danh sách hiện tại trống sau khi xóa, chuyển về trang trước nếu cần
+    if (updatedQuestions.length <= (currentPage - 1) * itemsPerPage && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
-  const handleEditQuestion = (index) => {
-    const questionToEdit = listQuestion[index];
+  const handleEditQuestion = (questionId) => {
+    const questionToEdit = listQuestion.find((q) => q.id === questionId);
     setQuestionContent(questionToEdit.question);
     setQuestionSubjectIndex(questionToEdit.subjectIndex);
     setQuestionChapterIndex(questionToEdit.chapterIndex);
     setSelectedLevelIndex(questionToEdit.levelIndex);
-    setUpdateQuestionIndex(index);
+    setUpdateQuestionId(questionId);
     openModal('sua-cau-hoi');
   };
 
-  const handleUpdateQuestion = (questions, index) => {
-    setUpdateQuestionIndex(index);
-    const updatedList = [...questions];
-    const updatedQuestion = {
-      question: questionContent,
-      subjectIndex: questionSubjectIndex,
-      chapterIndex: questionChapterIndex,
-      levelIndex: selectedLevelIndex,
-    };
-    updatedList.splice(index, 1, updatedQuestion);
+  const handleUpdateQuestion = (questionId) => {
+    const updatedList = listQuestion.map((q) =>
+      q.id === questionId
+        ? {
+            ...q,
+            question: questionContent,
+            subjectIndex: questionSubjectIndex,
+            chapterIndex: questionChapterIndex,
+            levelIndex: selectedLevelIndex,
+          }
+        : q
+    );
     setListQuestion(updatedList);
     alert('Đã cập nhật câu hỏi');
-    setIsRequestedChangeQuestions(true);
+    closeModal();
   };
 
-  const checkCorrectQuestionAnwserIndex = (index) => {
+  const checkCorrectQuestionAnswerIndex = (index) => {
     return questionCorrectAnswerIndex === index;
   };
 
@@ -174,41 +178,24 @@ const Question = () => {
 
   const handleTextareaContent = (isRequestedClear) => {
     if (isRequestedClear) {
+      setIsRequestedClearTextarea(false);
       return '';
     }
     return questionContent;
   };
-  const handleToggleQuestions = (subjectIdx, chapterIdx, levelIdx) => {
-    const filterSubjectIndex =
-      subjectIdx !== undefined ? subjectIdx : questionSubjectIndex;
-    const filterChapterIndex =
-      chapterIdx !== undefined ? chapterIdx : questionChapterIndex;
-    const filterLevelIndex =
-      levelIdx !== undefined ? levelIdx : selectedLevelIndex;
-
-    const filterToggleQuestionArray = CustomObjArrayFilter(
-      listQuestion,
-      ['subjectIndex', 'chapterIndex', 'levelIndex'],
-      [filterSubjectIndex, filterChapterIndex, filterLevelIndex]
-    );
-
-    setToggleQuestions(filterToggleQuestionArray);
-    setIsRequestedChangeQuestions(true);
-    setCurrentPage(1);
-  };
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(toggleQuestions.length / itemsPerPage);
+  const totalPages = Math.ceil(listQuestion.length / itemsPerPage);
   const [currentData, setCurrentData] = useState([]);
 
   useEffect(() => {
-    const data = toggleQuestions.slice(
+    const data = listQuestion.slice(
       (currentPage - 1) * itemsPerPage,
       currentPage * itemsPerPage
     );
     setCurrentData(data);
-  }, [toggleQuestions, currentPage]);
+  }, [listQuestion, currentPage]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -251,7 +238,7 @@ const Question = () => {
                   <p className="text-blue-800">Độ khó</p>
                   <select
                     value={selectedLevelIndex}
-                    onChange={handleLevleChange}
+                    onChange={handleLevelChange}
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                   >
                     {levels.slice(1).map((level, index) => (
@@ -275,10 +262,7 @@ const Question = () => {
                 <div className="w-full h-auto">
                   <ul className="">
                     {listAnswer.map((answer, index) => (
-                      <li
-                        key={index}
-                        className="hover:bg-blue-800 hover:text-white"
-                      >
+                      <li key={index} className="hover:bg-blue-800 hover:text-white">
                         <div className="w-full flex items-center justify-evenly">
                           <div className="min-w-8 text-xl ">{index + 1}</div>
                           <div
@@ -291,10 +275,8 @@ const Question = () => {
                             <Radio
                               title="Đáp án đúng"
                               name="answers"
-                              checked={checkCorrectQuestionAnwserIndex(index)}
-                              onClick={() =>
-                                updateCorrectQuestionAnswerIndex(index)
-                              }
+                              checked={checkCorrectQuestionAnswerIndex(index)}
+                              onClick={() => updateCorrectQuestionAnswerIndex(index)}
                             />
                             Chọn
                           </div>
@@ -329,7 +311,7 @@ const Question = () => {
                   title="Lưu câu trả lời"
                   onClick={() => {
                     showAnwserContainer();
-                    addNewAnswer(answerContent);
+                    addNewAnswer();
                   }}
                 />
               </div>
@@ -338,12 +320,7 @@ const Question = () => {
               classname="p-2 text-xl w-4/5 ml-20 mt-8 bg-red-700"
               title="LƯU CÂU HỎI"
               onClick={() =>
-                addNewQuestion(
-                  questionContent,
-                  questionChapterIndex,
-                  questionSubjectIndex,
-                  selectedLevelIndex
-                )
+                addNewQuestion(questionContent, questionChapterIndex, questionSubjectIndex, selectedLevelIndex)
               }
             />
           </div>
@@ -386,23 +363,14 @@ const Question = () => {
               <input className="w-4/5 border mt-4" type="file" />
               <p className="mt-4 text-blue-700">
                 Vui lòng soạn câu hỏi theo đúng định dạng.{' '}
-                <a
-                  className="text-red-700 italic hover:underline"
-                  href="/files/mauCauHoi.xlsx"
-                >
+                <a className="text-red-700 italic hover:underline" href="/files/mauCauHoi.xlsx">
                   Tải mẫu
                 </a>
               </p>
             </div>
             <div className="w-full flex mt-16 justify-evenly">
-              <CustomButton
-                title="Thêm file excel"
-                classname="pl-16 pr-16 pt-2 pb-2 rounded-sm"
-              />
-              <CustomButton
-                title="Thêm vào hệ thống"
-                classname="pl-16 pr-16 pt-2 pb-2 rounded-sm"
-              />
+              <CustomButton title="Thêm file excel" classname="pl-16 pr-16 pt-2 pb-2 rounded-sm" />
+              <CustomButton title="Thêm vào hệ thống" classname="pl-16 pr-16 pt-2 pb-2 rounded-sm" />
             </div>
           </div>
         );
@@ -413,10 +381,7 @@ const Question = () => {
     switch (modalName) {
       case 'them-cau-hoi':
         return (
-          <div
-            className="flex flex-col items-center justify-center"
-            style={{ fontFamily: 'Playfair display' }}
-          >
+          <div className="flex flex-col items-center justify-center" style={{ fontFamily: 'Playfair display' }}>
             <div className="w-full flex items-center">
               <div
                 className={`p-2 bg-black text-white ${activeTab === 'them-thu-cong' ? 'bg-blue-800 rounded-tr-xl' : 'bg-black'}`}
@@ -473,7 +438,7 @@ const Question = () => {
                   <p className="text-blue-800">Độ khó</p>
                   <select
                     value={selectedLevelIndex}
-                    onChange={handleLevleChange}
+                    onChange={handleLevelChange}
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                   >
                     {levels.slice(1).map((level, index) => (
@@ -491,70 +456,10 @@ const Question = () => {
               type="text"
               className="w-full p-2 mt-4 min-h-60 border rounded-xl focus:border-3 focus:outline-none focus:border-blue-400 focus:shadow-blue-300 focus:shadow-lg"
             />
-            <div className="w-full flex flex-col mt-8 mr-8 justify-center items-center">
-              <p className="font-bold mb-2 text-blue-800">Danh sách đáp án</p>
-              {isExistedAnswer && (
-                <div className="w-full h-auto">
-                  <ul className="">
-                    {listAnswer.map((answer, index) => (
-                      <li
-                        key={index}
-                        className="hover:bg-blue-800 hover:text-white"
-                      >
-                        <div className="w-full flex items-center justify-evenly">
-                          <div className="min-w-8 text-xl ">{index + 1}</div>
-                          <div
-                            className={`flex-1 max-w-96 ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
-                            onClick={() => toggleExpand(index)}
-                          >
-                            {answer}
-                          </div>
-                          <div className="w-20 ml-8 flex items-center">
-                            <Radio title="Đáp án đúng" />
-                            Chọn
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <PencilIcon className="w-5 h-5" />
-                            <XIcon className="w-5 h-5" />
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <div
-                className="flex items-center space-x-2 p-2 bg-black mt-4 text-white text-center rounded-md hover:bg-red-700"
-                onClick={() => showAnswerContentContainer()}
-              >
-                <p>THÊM CÂU TRẢ LỜI</p> <ArrowDownIcon className="w-4 h-4" />
-              </div>
-            </div>
-            {isRequestAddAnswer && (
-              <div className="flex flex-col w-full min-h-64 space-y-4 mt-4">
-                <p className="text-lg font-bold">Nội dung câu trả lời</p>
-                <textarea
-                  value={answerContent || ''}
-                  onChange={(e) => createNewAnswer(e.target.value)}
-                  placeholder="Nhập câu trả lời..."
-                  className="w-full min-h-32 bg-white border-2 border-gray-300 p-2 rounded-xl focus:outline-none focus:border-3 focus:border-blue-400 focus:shadow-blue-300 focus:shadow-lg"
-                />
-                <CustomButton
-                  classname="w-1/5 p-2"
-                  title="Lưu câu trả lời"
-                  onClick={() => {
-                    showAnwserContainer();
-                    addNewAnswer(answerContent);
-                  }}
-                />
-              </div>
-            )}
             <CustomButton
               classname="p-2 text-xl w-4/5 ml-20 mt-8 bg-red-700"
               title="LƯU THAY ĐỔI"
-              onClick={() =>
-                handleUpdateQuestion(listQuestion, updateQuestionIndex)
-              }
+              onClick={() => handleUpdateQuestion(updateQuestionId)}
             />
           </div>
         );
@@ -562,15 +467,12 @@ const Question = () => {
   };
 
   return (
-    <div
-      className="w-full min-h-screen bg-gray-100 flex justify-center"
-      style={{ fontFamily: 'PlayFair Display' }}
-    >
+    <div className="w-full min-h-screen bg-gray-100 flex justify-center" style={{ fontFamily: 'PlayFair Display' }}>
       <div className="w-9/10 h-full bg-white mt-8 rounded-2xl">
         <CustomModal
           isOpen={isOpenModal}
           onClose={closeModal}
-          title="Them cau hoi modal"
+          title="Thêm câu hỏi modal"
           className="bg-white rounded-xl p-6 min-w-200 min-h-100 overflow-auto max-h-140 mx-auto z-40 mt-20 border-2 border-black"
         >
           {modalContent()}
@@ -590,11 +492,7 @@ const Question = () => {
             className="w-64 border-2 p-2 rounded-xl bg-blue-50 text-blue-800"
             name="sl-monhoc"
             value={questionSubjectIndex}
-            onChange={(e) => {
-              const newValue = parseInt(e.target.value);
-              setQuestionSubjectIndex(newValue);
-              handleToggleQuestions(newValue, undefined, undefined);
-            }}
+            onChange={handleSubjectChange}
           >
             {subjects.map((subject, index) => (
               <option key={index} value={index}>
@@ -606,11 +504,7 @@ const Question = () => {
             className="w-64 border-2 p-2 rounded-xl bg-blue-50 text-blue-800"
             name="sl-chuong"
             value={questionChapterIndex}
-            onChange={(e) => {
-              const newValue = parseInt(e.target.value);
-              setQuestionChapterIndex(newValue);
-              handleToggleQuestions(undefined, newValue, undefined);
-            }}
+            onChange={handleChapterChange}
           >
             {chapters.map((chapter, index) => (
               <option key={index} value={index}>
@@ -624,11 +518,7 @@ const Question = () => {
               className="ml-4 w-32 border-2 p-2 rounded-xl bg-blue-50 text-blue-800"
               name="sl-dokho"
               value={selectedLevelIndex}
-              onChange={(e) => {
-                const newValue = parseInt(e.target.value);
-                setSelectedLevelIndex(newValue);
-                handleToggleQuestions(undefined, undefined, newValue);
-              }}
+              onChange={handleLevelChange}
             >
               {levels.map((level, index) => (
                 <option key={index} value={index}>
@@ -660,60 +550,51 @@ const Question = () => {
               </tr>
             </thead>
             <tbody>
-              {isRequestChangeQuestions &&
-                currentData.map((item, index) => (
-                  <tr key={index} className="hover:bg-black hover:text-white">
-                    <td className="text-center py-4 text-blue-600 font-bold">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
-                    </td>
-                    <td>
+              {currentData.map((item, index) => (
+                <tr key={item.id} className="hover:bg-black hover:text-white">
+                  <td className="text-center py-4 text-blue-600 font-bold">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </td>
+                  <td>
+                    <div
+                      className={`flex-1 max-w-130 text-center ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
+                      onClick={() => toggleExpand(index)}
+                    >
+                      {item.question}
+                    </div>
+                  </td>
+                  <td className="text-center overflow-hidden w-full">
+                    <div
+                      className={`flex-1 max-w-full text-center ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
+                      onClick={() => toggleExpand(index)}
+                    >
+                      {subjects[item.subjectIndex]}
+                    </div>
+                  </td>
+                  <td className="text-center pr-8">{levels[item.levelIndex]}</td>
+                  <td className="text-center">
+                    <div className="flex items-center justify-center space-x-2">
                       <div
-                        className={`flex-1 max-w-130 text-center ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
-                        onClick={() => toggleExpand(index)}
+                        onClick={() => handleEditQuestion(item.id)}
+                        className="text-white bg-blue-900 rounded-2xl p-1"
                       >
-                        {item.question}
+                        <PencilIcon className="w-5 h-5" />
                       </div>
-                    </td>
-                    <td className="text-center overflow-hidden w-full">
                       <div
-                        className={`flex-1 max-w-full text-center ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
-                        onClick={() => toggleExpand(index)}
+                        className="text-white bg-red-700 rounded-2xl p-1"
+                        onClick={() => handleDeleteQuestion(item.id)}
                       >
-                        {subjects[item.subjectIndex]}
+                        <XIcon className="w-5 h-5" />
                       </div>
-                    </td>
-                    <td className="text-center pr-8">
-                      {levels[item.levelIndex]}
-                    </td>
-                    <td className="text-center">
-                      <div className="flex items-center justify-center space-x-2">
-                        <div
-                          onClick={() => handleEditQuestion(index)}
-                          className="text-white bg-blue-900 rounded-2xl p-1"
-                        >
-                          <PencilIcon className="w-5 h-5" />
-                        </div>
-                        <div
-                          className="text-white bg-red-700 rounded-2xl p-1"
-                          onClick={() =>
-                            handelDeleteQuesion(listQuestion, index)
-                          }
-                        >
-                          <XIcon className="w-5 h-5" />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
         <div className="flex justify-center mt-8 mb-8">
-          <PaginatedTable
-            totalPages={totalPages}
-            currentPage={currentPage}
-            onPageChange={handlePageChange}
-          />
+          <PaginatedTable totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} />
         </div>
       </div>
     </div>
