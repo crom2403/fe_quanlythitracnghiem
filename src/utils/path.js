@@ -7,12 +7,13 @@ const path = {
   USER: '/user',
   SUBJECT: '/subject',
   ASSIGNMENT: '/assignment',
-  TEST: '/test',
+  TEST: '/dashboard/test',
   NOTIFICATION: '/notification',
   GROUP: '/dashboard/group',
   GROUPDETAIL:'/dashboard/group/detail',
   EXAMPAPER:'/dashboard/group/detail/exampaper',
   QUESTION: '/dashboard/question',
+
 };
 
 export default path;

@@ -9,7 +9,7 @@ import Group from './modules/group/Group';
 import GroupDetail from './modules/groupdetail/GroupDetail';
 import ExamPaper from './modules/exampaper/ExamPaper';
 import Question from './modules/question/Question';
-
+import Test from './modules/test/Test';
 function App() {
   return (
     <div className="min-h-screen">
@@ -31,10 +31,11 @@ function App() {
               path={path.QUESTION.substring(1)}
               element={<Question />}
             />
-            <Route path={path.TEST.substring(1)} element={<Home />} />
             <Route path={path.MODULE.substring(1)} element={<Module />} />
             <Route path={path.QUESTION.substring(1)} element={<Home />} />
             <Route path={path.SUBJECT.substring(1)} element={<Home />} />
+            <Route path={path.TEST.substring(1)} element={<Test />} />
+
           </Route>
           <Route path={path.LOGIN} element={<Login />} />
         </Routes>
