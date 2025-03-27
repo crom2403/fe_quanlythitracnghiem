@@ -72,20 +72,22 @@ const Sitebar = () => {
             Người dùng
           </Link>
           
-          <a
-            href="#"
+          <Link
+            to={path.SUBJECT}
+            onClick={() => handleLinkClick(path.SUBJECT)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <BookOpenIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Môn học
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+           to={path.ASSIGNMENT}
+           onClick={() => handleLinkClick(path.ASSIGNMENT)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <ClipboardIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Phân công
-          </a>
+          </Link>
           <a
             href="#"
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
