@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function ExamPage() {
+  const navigate = useNavigate();
+
   // Thời gian làm bài (ví dụ 10 phút = 600 giây)
   const [timeRemaining, setTimeRemaining] = useState(600);
   // Trạng thái bài thi: "ongoing" (đang làm) hoặc "submitted" (đã nộp)
@@ -191,20 +194,18 @@ export default function ExamPage() {
                     <button
                       key={opt.id}
                       onClick={() => handleSelectAnswer(q.id, opt.id)}
-                      className={`flex items-center p-3 rounded border transition 
-                        ${
-                          selected
-                            ? "border-blue-500 bg-blue-100"
-                            : "border-gray-300 hover:bg-gray-100"
-                        }`}
+                      className={`flex items-center p-3 rounded border transition ${
+                        selected
+                          ? "border-blue-500 bg-blue-100"
+                          : "border-gray-300 hover:bg-gray-100"
+                      }`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 font-bold
-                          ${
-                            selected
-                              ? "bg-blue-500 text-white"
-                              : "bg-white border-2 border-gray-300"
-                          }`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 font-bold ${
+                          selected
+                            ? "bg-blue-500 text-white"
+                            : "bg-white border-2 border-gray-300"
+                        }`}
                       >
                         {opt.id}
                       </div>
@@ -217,8 +218,7 @@ export default function ExamPage() {
           ))}
         </div>
 
-
-        {/* Cột chọn câu hỏi cố định dưới header, bên phải */}
+        {/* Cột chọn câu hỏi cố định bên phải */}
         <div className="fixed top-20 right-5 w-72 bg-white shadow rounded-lg p-4 max-h-[calc(100vh-4rem)] overflow-auto">
           <div className="text-center font-bold mb-4">Chọn Câu Hỏi</div>
           <div className="flex flex-col gap-2">
@@ -226,12 +226,11 @@ export default function ExamPage() {
               <button
                 key={q.id}
                 onClick={() => scrollToQuestion(q.id)}
-                className={`px-4 py-2 rounded border font-bold transition text-center 
-                  ${
-                    q.selectedAnswer
-                      ? "bg-green-100 border-green-400 text-green-700"
-                      : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                  }`}
+                className={`px-4 py-2 rounded border font-bold transition text-center ${
+                  q.selectedAnswer
+                    ? "bg-green-100 border-green-400 text-green-700"
+                    : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                }`}
               >
                 {q.id}
               </button>
@@ -243,19 +242,60 @@ export default function ExamPage() {
   };
 
   // -------------------------
-  // Giao diện khi đã nộp bài
+  // Giao diện khi đã nộp bài (cập nhật đẹp hơn)
   // -------------------------
   const renderSubmittedExam = () => {
-    const score = calculateScore();
+    const totalQuestions = questions.length;
+    const correctAnswers = calculateScore();
+    const answeredCount = questions.filter((q) => q.selectedAnswer !== null).length;
+    const wrongAnswers = answeredCount - correctAnswers;
+    const skipped = totalQuestions - answeredCount;
+    const totalTime = 600; // Tổng thời gian làm bài (giây)
+    const timeUsed = totalTime - timeRemaining;
+    const timeUsedFormatted = formatTime(timeUsed);
+    const accuracy = (correctAnswers / totalQuestions) * 100;
+
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white p-8 rounded shadow text-center">
-          <h2 className="text-2xl font-bold mb-4">Kết quả bài thi</h2>
-          <div className="text-6xl font-bold text-green-600 mb-4">
-            {score}/10
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-50 to-purple-50 p-6">
+        <div className="bg-white p-10 rounded-xl shadow-2xl text-center w-full max-w-lg">
+          <h2 className="text-4xl font-extrabold text-gray-800 mb-8">
+            Kết quả làm bài
+          </h2>
+          <div className="mb-10">
+            <div className="text-5xl font-bold text-blue-600">
+              {correctAnswers}/{totalQuestions}
+            </div>
+            <p className="mt-2 text-lg text-gray-600">
+              Điểm số: {accuracy.toFixed(2)}%
+            </p>
           </div>
-          <div className="text-lg">
-            Số câu đúng: {score} / {questions.length}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 text-lg">
+            <div>
+              <p className="font-semibold text-green-600">{correctAnswers}</p>
+              <p className="text-gray-500">Đúng</p>
+            </div>
+            <div>
+              <p className="font-semibold text-red-600">{wrongAnswers}</p>
+              <p className="text-gray-500">Sai</p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-500">{skipped}</p>
+              <p className="text-gray-500">Bỏ qua</p>
+            </div>
+          </div>
+          <p className="text-xl text-gray-600 mb-10">
+            Thời gian hoàn thành:{" "}
+            <span className="font-semibold text-blue-600">{timeUsedFormatted}</span>
+          </p>
+          <div className="flex justify-center gap-6">
+            <button
+              className="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg text-xl font-bold hover:bg-gray-300 transition duration-300 shadow-lg"
+              onClick={() => {
+                navigate("/dashboard");
+              }}
+            >
+              Quay về trang đề thi
+            </button>
           </div>
         </div>
       </div>
