@@ -9,6 +9,10 @@ export default function ExamPage() {
   // Trạng thái bài thi: "ongoing" (đang làm) hoặc "submitted" (đã nộp)
   const [examState, setExamState] = useState("ongoing");
 
+  // Hiển thị pop-up xác nhận nộp bài
+  const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+
+
   // Danh sách câu hỏi (ví dụ)
   const [questions, setQuestions] = useState([
     {
@@ -121,14 +125,28 @@ export default function ExamPage() {
   };
 
   // -------------------------
-  // Nộp bài thi
+  // Mở pop-up xác nhận nộp bài
+  // -------------------------
+  const handleOpenConfirmSubmit = () => {
+    setShowConfirmSubmit(true);
+  };
+
+  // -------------------------
+  // Đóng pop-up xác nhận nộp bài
+  // -------------------------
+  const handleCloseConfirmSubmit = () => {
+    setShowConfirmSubmit(false);
+  };
+
+  // -------------------------
+  // Thực sự nộp bài
   // -------------------------
   const handleSubmitExam = () => {
     setExamState("submitted");
   };
 
   // -------------------------
-  // Cuộn đến câu hỏi tương ứng
+  // Cuộn đến câu hỏi tương ứng (khi đang làm)
   // -------------------------
   const scrollToQuestion = (questionId) => {
     const element = document.getElementById(`question-${questionId}`);
@@ -138,7 +156,7 @@ export default function ExamPage() {
   };
 
   // -------------------------
-  // Tính điểm (ví dụ)
+  // Tính điểm
   // -------------------------
   const calculateScore = () => {
     const correct = { 1: "B", 2: "D", 3: "A", 4: "A", 5: "C", 6: "D" };
@@ -168,7 +186,7 @@ export default function ExamPage() {
               {formatTime(timeRemaining)}
             </div>
             <button
-              onClick={handleSubmitExam}
+              onClick={handleOpenConfirmSubmit}
               className="bg-blue-600 text-white px-4 py-2 rounded"
             >
               Nộp Bài
@@ -176,7 +194,7 @@ export default function ExamPage() {
           </div>
         </div>
 
-        {/* Nội dung bài thi, đẩy xuống dưới header */}
+        {/* Nội dung bài thi */}
         <div className="max-w-4xl mx-auto px-4 py-6 mt-20 mr-80">
           {questions.map((q) => (
             <div
@@ -237,12 +255,48 @@ export default function ExamPage() {
             ))}
           </div>
         </div>
+
+        {/* Pop-up xác nhận nộp bài */}
+        {showConfirmSubmit && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm backdrop-filter
+           transition-all ease-in-out duration-300  bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="text-blue-500 text-5xl">ℹ</div>
+                <h2 className="text-xl font-bold">
+                  Bạn có chắc chắn muốn nộp bài ?
+                </h2>
+                <p className="text-gray-600">
+                  Khi xác nhận nộp bài, bạn sẽ không thể sửa lại bài thi của
+                  mình. Chúc bạn may mắn!
+                </p>
+                <div className="flex space-x-4 mt-4">
+                  <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    onClick={() => {
+                      handleSubmitExam();
+                      handleCloseConfirmSubmit();
+                    }}
+                  >
+                    Vâng, chắc chắn!
+                  </button>
+                  <button
+                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+                    onClick={handleCloseConfirmSubmit}
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   // -------------------------
-  // Giao diện khi đã nộp bài (cập nhật đẹp hơn)
+  // Giao diện khi đã nộp bài
   // -------------------------
   const renderSubmittedExam = () => {
     const totalQuestions = questions.length;
@@ -255,47 +309,87 @@ export default function ExamPage() {
     const timeUsedFormatted = formatTime(timeUsed);
     const accuracy = (correctAnswers / totalQuestions) * 100;
 
+    // Định nghĩa đáp án đúng cho từng câu hỏi
+    const correctMapping = { 1: "B", 2: "D", 3: "A", 4: "A", 5: "C", 6: "D" };
+
+    // Layout: hiển thị kết quả chung + danh sách câu hỏi bên dưới
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-50 to-purple-50 p-6">
-        <div className="bg-white p-10 rounded-xl shadow-2xl text-center w-full max-w-lg">
+      <div className="min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 p-6">
+        {/* Kết quả chung */}
+        <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-center mb-8">
           <h2 className="text-4xl font-extrabold text-gray-800 mb-8">
             Kết quả làm bài
           </h2>
-          <div className="mb-10">
+          <div className="mb-6 flex flex-col items-center space-y-2">
             <div className="text-5xl font-bold text-blue-600">
               {correctAnswers}/{totalQuestions}
             </div>
-            <p className="mt-2 text-lg text-gray-600">
+            <p className="text-lg text-gray-600">
               Điểm số: {accuracy.toFixed(2)}%
             </p>
+            <p className="text-lg text-gray-600">
+              Thời gian hoàn thành:{" "}
+              <span className="font-semibold text-blue-600">
+                {timeUsedFormatted}
+              </span>
+            </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 text-lg">
+
+          <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-6 space-y-3 sm:space-y-0 mb-6 text-lg">
             <div>
-              <p className="font-semibold text-green-600">{correctAnswers}</p>
-              <p className="text-gray-500">Đúng</p>
+              Đúng: <span className="font-semibold text-green-600">{correctAnswers}</span>
             </div>
             <div>
-              <p className="font-semibold text-red-600">{wrongAnswers}</p>
-              <p className="text-gray-500">Sai</p>
+              Sai: <span className="font-semibold text-red-600">{wrongAnswers}</span>
             </div>
             <div>
-              <p className="font-semibold text-gray-500">{skipped}</p>
-              <p className="text-gray-500">Bỏ qua</p>
+              Bỏ qua: <span className="font-semibold text-gray-500">{skipped}</span>
             </div>
           </div>
-          <p className="text-xl text-gray-600 mb-10">
-            Thời gian hoàn thành:{" "}
-            <span className="font-semibold text-blue-600">{timeUsedFormatted}</span>
-          </p>
-          <div className="flex justify-center gap-6">
-            <button
-              className="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg text-xl font-bold hover:bg-gray-300 transition duration-300 shadow-lg"
-              onClick={() => {
-                navigate("/dashboard");
-              }}
-            >
-              Quay về trang đề thi
-            </button>
+
+          <button
+            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg text-lg font-bold hover:bg-gray-300 transition duration-300 shadow-lg"
+            onClick={() => navigate("/dashboard/test")}
+          >
+            Quay về trang đề thi
+          </button>
+        </div>
+
+        {/* Danh sách câu hỏi - dạng lưới nhiều cột */}
+        <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow-2xl">
+          <h3 className="text-2xl font-bold mb-4 text-gray-700">
+            Danh sách câu hỏi
+          </h3>
+
+          {/* Chia làm nhiều cột (có thể tùy chỉnh grid-cols-2,3,4) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {questions.map((q) => {
+              // Kiểm tra xem người dùng có chọn đáp án không
+              const userAnswer = q.selectedAnswer;
+              const isAnswered = userAnswer !== null;
+              // Đáp án đúng
+              const correctAns = correctMapping[q.id];
+              // Xác định đúng/sai
+              const isCorrect = userAnswer === correctAns;
+
+              let summaryText = `Câu ${q.id}: `;
+              if (!isAnswered) {
+                summaryText += "chưa trả lời";
+              } else {
+                // Vd: "Câu 1: A (✓)" hoặc "Câu 1: C (✗)"
+                summaryText += userAnswer;
+                summaryText += isCorrect ? " (✓)" : " (✗)";
+              }
+
+              return (
+                <div
+                  key={q.id}
+                  className="border rounded-lg p-4 text-sm text-gray-700"
+                >
+                  <div className="font-semibold mb-1">{summaryText}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

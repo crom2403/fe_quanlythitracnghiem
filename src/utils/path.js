@@ -13,7 +13,7 @@ const path = {
   GROUPDETAIL:'/dashboard/group/detail',
   EXAMPAPER:'/dashboard/group/detail/exampaper',
   QUESTION: '/dashboard/question',
-
+  Course: '/dashboard/course',
 };
 
 export default path;
