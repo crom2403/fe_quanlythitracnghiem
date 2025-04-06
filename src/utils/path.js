@@ -14,6 +14,7 @@ const path = {
   EXAMPAPER:'/dashboard/group/detail/exampaper',
   QUESTION: '/dashboard/question',
   Course: '/dashboard/course',
+  EXAM: '/dashboard/exam',
 };
 
 export default path;

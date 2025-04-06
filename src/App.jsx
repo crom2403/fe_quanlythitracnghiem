@@ -10,6 +10,8 @@ import GroupDetail from './modules/groupdetail/GroupDetail';
 import ExamPaper from './modules/exampaper/ExamPaper';
 import Question from './modules/question/Question';
 import Test from './modules/test/Test';
+import Exam from './modules/test/Exam';
+
 import Course from './modules/svcourse/CourseGroup';
 function App() {
   return (
@@ -36,6 +38,8 @@ function App() {
             <Route path={path.QUESTION.substring(1)} element={<Home />} />
             <Route path={path.SUBJECT.substring(1)} element={<Home />} />
             <Route path={path.TEST.substring(1)} element={<Test />} />
+            <Route path={path.EXAM.substring(1)} element={<Exam />} />
+            
             <Route path={path.Course.substring(1)} element={<Course />} />
 
           </Route>

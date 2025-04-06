@@ -12,6 +12,12 @@ export default function ExamPage() {
   // Hiển thị pop-up xác nhận nộp bài
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
 
+  // Theo dõi số lần chuyển tab
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  
+  // Hiển thị cảnh báo
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("");
 
   // Danh sách câu hỏi (ví dụ)
   const [questions, setQuestions] = useState([
@@ -104,6 +110,67 @@ export default function ExamPage() {
   }, [examState]);
 
   // -------------------------
+  // Xử lý phát hiện chuyển tab và chặn đóng tab
+  // -------------------------
+  useEffect(() => {
+    if (examState !== "ongoing") return;
+
+    // Xử lý khi người dùng chuyển tab
+    const handleVisibilityChange = () => {
+      if (document.hidden && examState === "ongoing") {
+        // Tăng số lần chuyển tab
+        setTabSwitchCount(prev => {
+          const newCount = prev + 1;
+          
+          if (newCount === 1) {
+            // Cảnh báo lần đầu
+            setWarningMessage("Bạn đã chuyển khỏi tab thi lần 1. Lần tiếp theo bạn sẽ bị buộc nộp bài!");
+            setShowWarning(true);
+          } else if (newCount >= 2) {
+            // Buộc nộp bài lần thứ 2
+            handleSubmitExam();
+          }
+          
+          return newCount;
+        });
+      }
+    };
+
+    // Xử lý chặn đóng tab
+    const handleBeforeUnload = (e) => {
+      if (examState === "ongoing") {
+        // Hiển thị cảnh báo và ngăn người dùng đóng tab
+        e.preventDefault();
+        e.returnValue = "Bạn không thể đóng tab trong khi làm bài thi. Vui lòng nộp bài trước khi thoát.";
+        
+        // Hiển thị cảnh báo trong ứng dụng
+        setWarningMessage("Bạn không thể đóng tab trong khi làm bài thi. Vui lòng nộp bài trước khi thoát.");
+        setShowWarning(true);
+        
+        // Phải trả về message để hiện hộp thoại xác nhận mặc định của trình duyệt
+        return e.returnValue;
+      }
+    };
+
+    // Đăng ký các event listeners
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [examState, tabSwitchCount]);
+
+  // -------------------------
+  // Xử lý đóng cảnh báo
+  // -------------------------
+  const handleCloseWarning = () => {
+    setShowWarning(false);
+  };
+
+  // -------------------------
   // Định dạng thời gian mm:ss
   // -------------------------
   const formatTime = (seconds) => {
@@ -143,6 +210,11 @@ export default function ExamPage() {
   // -------------------------
   const handleSubmitExam = () => {
     setExamState("submitted");
+    
+    // Log thông tin về số lần chuyển tab
+    console.log("Thống kê hành vi:", {
+      tabSwitchCount
+    });
   };
 
   // -------------------------
@@ -291,6 +363,32 @@ export default function ExamPage() {
             </div>
           </div>
         )}
+
+        {/* Cảnh báo chuyển/đóng tab */}
+        {showWarning && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm backdrop-filter
+           transition-all ease-in-out duration-300 bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="text-yellow-500 text-5xl">⚠️</div>
+                <h2 className="text-xl font-bold text-red-600">
+                  Cảnh Báo!
+                </h2>
+                <p className="text-gray-700">
+                  {warningMessage}
+                </p>
+                <div className="flex space-x-4 mt-4">
+                  <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    onClick={handleCloseWarning}
+                  >
+                    Tôi đã hiểu
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -347,9 +445,16 @@ export default function ExamPage() {
             </div>
           </div>
 
+          {/* Thêm thông tin về số lần chuyển tab */}
+          <div className="border-t pt-4 mt-4">
+            <p className="text-md text-gray-700 mb-2">
+              <span className="font-medium">Số lần chuyển tab:</span> <span className="text-red-600">{tabSwitchCount}</span>
+            </p>
+          </div>
+
           <button
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg text-lg font-bold hover:bg-gray-300 transition duration-300 shadow-lg"
-            onClick={() => navigate("/dashboard/test")}
+            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg text-lg font-bold hover:bg-gray-300 transition duration-300 shadow-lg mt-6"
+            onClick={() => navigate("/dashboard")}
           >
             Quay về trang đề thi
           </button>
