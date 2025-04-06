@@ -8,10 +8,11 @@ import {
 import { FaWrench, FaEyeSlash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import path from '../../utils/path';
+import { group } from './groupService';
 
 const Group = () => {
   const [setActiveLink] = useState(path.GROUPDETAIL);
-  const handleLinkClick = (link) =>{
+  const handleLinkClick = (link) => {
     setActiveLink(link);
   }
   const [visibleMenu, setVisibleMenu] = useState({
@@ -42,13 +43,14 @@ const Group = () => {
       ],
     ],
   ];
+  const groups = group; //api tra ve doi tuong co nhieu doi tuong con va mot
 
   const toggleMenu = (groupIndex, subGroupIndex) => {
     if (
       visibleMenu.groupIndex === groupIndex &&
       visibleMenu.subGroupIndex === subGroupIndex
     ) {
-      setVisibleMenu({ groupIndex: null, subGroupIndex: null }); 
+      setVisibleMenu({ groupIndex: null, subGroupIndex: null });
     } else {
       setVisibleMenu({ groupIndex, subGroupIndex });
     }
@@ -60,13 +62,11 @@ const Group = () => {
       style={{ fontFamily: 'PlayFair Display' }}
     >
       <div className="flex h-10 mt-8 items-center ml-16">
-        <div className="flex h-10 border-2 border-black bg-white text-black rounded-2xl items-center">
-          <select className="pl-2 pr-2">
-            <option className="bg-black text-white">Đang giảng dạy</option>
-            <option className="bg-black text-white">Đã xong</option>
-            <option className="bg-black text-white">...</option>
-          </select>
-        </div>
+        <select className="p-2 bg-blue-900 text-white rounded-md">  
+          <option className="bg-blue-100 text-black">Đang giảng dạy</option>
+          <option className="bg-blue-100 text-black">Đã xong</option>
+          <option className="bg-blue-100 text-black">...</option>
+        </select>
         <div className="h-10">
           <input
             type="search"
@@ -74,7 +74,7 @@ const Group = () => {
             placeholder="Nhập thông tin tìm kiếm..."
           />
         </div>
-        <div className="flex ml-auto items-center h-10 mr-16 rounded-2xl pl-4 pr-4 border-2 border-white text-white bg-black hover:bg-blue-900 hover:text-xl">
+        <div className="flex ml-auto items-center h-10 mr-16 rounded-2xl pl-4 pr-4 border-2 border-white text-white bg-blue-900 hover:bg-blue-600">
           <PlusIcon className="w-4 h-4 text-white mr-2" />
           Thêm nhóm
         </div>
@@ -108,7 +108,7 @@ const Group = () => {
                             <li className="p-2 hover:bg-gray-200">
                               <Link
                                 to={path.GROUPDETAIL}
-                                onClick={()=>handleLinkClick(path.GROUPDETAIL)}
+                                onClick={() => handleLinkClick(path.GROUPDETAIL)}
                                 className="flex items-center"
                               >
                                 <UserGroupIcon className="w-5 h-5 text-blue-900 mr-2" />{' '}

@@ -2,12 +2,12 @@ import {
   QuestionMarkCircleIcon,
   ViewGridIcon,
   UsersIcon,
-  UserIcon,
   BookOpenIcon,
   ClipboardIcon,
   CheckCircleIcon,
   BellIcon,
 } from '@heroicons/react/outline';
+import {GiNotebook} from 'react-icons/gi';
 import { Link, useNavigate } from 'react-router-dom';
 import path from '../../utils/path';
 import { useState } from 'react';
@@ -50,7 +50,7 @@ const Sitebar = () => {
             onClick={() => handleLinkClick(path.GROUP)}
             className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.GROUP)}`}
           >
-            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            <GiNotebook className="h-6 w-6 hover:text-white text-black mr-2" />
             Nhóm học phần
           </Link>
           <Link
@@ -63,42 +63,47 @@ const Sitebar = () => {
             <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Câu hỏi
           </Link>
-          <a
-            href="#"
+          <Link
+            to={path.USER}
+            onClick={() => handleLinkClick(path.USER)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
-            <UserIcon className="h-6 w-6 hover:text-white text-black mr-2" />
-            Thông tin cá nhân
-          </a>
+            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Người dùng
+          </Link>
           
-          <a
-            href="#"
+          <Link
+            to={path.SUBJECT}
+            onClick={() => handleLinkClick(path.SUBJECT)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <BookOpenIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Môn học
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+           to={path.ASSIGNMENT}
+           onClick={() => handleLinkClick(path.ASSIGNMENT)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <ClipboardIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Phân công
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            to={path.EXAMPAPER}
+            onClick={() => handleLinkClick(path.EXAMPAPER)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <CheckCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Đã kiểm tra
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            to={path.NOTIFICATION}
+            onClick={() => handleLinkClick(path.NOTIFICATION)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <BellIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Thông báo
-          </a>
+          </Link>
         </div>
       </div>
     );

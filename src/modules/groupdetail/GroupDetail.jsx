@@ -166,7 +166,7 @@ const GroupDetail = () => {
                   className="w-full text-black space-y-2 mt-4 bg-blue-50 pl-4 h-25 pt-4 border-l-3 border-blue-900 rounded-2xl"
                 >
                   <div className="text-2xl text-blue-800">
-                    <Link to={path.EXAMPAPER} onClick={()=>handleLinkClick(path.EXAMPAPER)}>{item[0]}</Link>
+                    <Link to={path.FINISHEDTEST} onClick={()=>handleLinkClick(path.FINISHEDTEST)}>{item[0]}</Link>
                   </div>
                   <div className="flex items-center space-x-1">
                     <ClockIcon className="w-4 h-4" />{' '}
