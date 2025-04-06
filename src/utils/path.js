@@ -4,17 +4,16 @@ const path = {
   LOGIN: '/login',
   MODULE: '/module',
   MODULE_DETAIL: '/module/detail',
-  USER: '/user',
-  SUBJECT: '/subject',
-  ASSIGNMENT: '/assignment',
-  TEST: '/dashboard/test',
-  NOTIFICATION: '/notification',
+  USER: '/dashboard/user',
+  SUBJECT: '/dashboard/subject',
+  ASSIGNMENT: '/dashboard/assignment',
+  TEST: '/test',
+  NOTIFICATION: '/dashboard/notification',
   GROUP: '/dashboard/group',
   GROUPDETAIL:'/dashboard/group/detail',
   EXAMPAPER:'/dashboard/group/detail/exampaper',
   QUESTION: '/dashboard/question',
-  Course: '/dashboard/course',
-  EXAM: '/dashboard/exam',
+  FINISHEDTEST: '/dashboard/finishedtest',
 };
 
 export default path;

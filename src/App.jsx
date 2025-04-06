@@ -9,10 +9,12 @@ import Group from './modules/group/Group';
 import GroupDetail from './modules/groupdetail/GroupDetail';
 import ExamPaper from './modules/exampaper/ExamPaper';
 import Question from './modules/question/Question';
-import Test from './modules/test/Test';
-import Exam from './modules/test/Exam';
+import User from './modules/user/User';
+import Subject from './modules/subject/Subject';
+import Assignment from './modules/assignment/Assignment';
+import FinishedTest from './modules/finishedtest/FinishedTest';
+import Notification from './modules/notification/Notification';
 
-import Course from './modules/svcourse/CourseGroup';
 function App() {
   return (
     <div className="min-h-screen">
@@ -26,23 +28,20 @@ function App() {
               path={path.GROUPDETAIL.substring(1)}
               element={<GroupDetail />}
             />
-            <Route
-              path={path.EXAMPAPER.substring(1)}
-              element={<ExamPaper />}
-            />
-            <Route
-              path={path.QUESTION.substring(1)}
-              element={<Question />}
-            />
+            <Route path={path.EXAMPAPER.substring(1)} element={<ExamPaper />} />
+            <Route path={path.QUESTION.substring(1)} element={<Question />} />
+            <Route path={path.USER.substring(1)} element={<User />} />
+            <Route path={path.TEST.substring(1)} element={<Home />} />
             <Route path={path.MODULE.substring(1)} element={<Module />} />
-            <Route path={path.QUESTION.substring(1)} element={<Home />} />
-            <Route path={path.SUBJECT.substring(1)} element={<Home />} />
-            <Route path={path.TEST.substring(1)} element={<Test />} />
-            <Route path={path.EXAM.substring(1)} element={<Exam />} />
-            
-            <Route path={path.Course.substring(1)} element={<Course />} />
-
+            <Route path={path.SUBJECT.substring(1)} element={<Subject />} />
+            <Route
+              path={path.ASSIGNMENT.substring(1)}
+              element={<Assignment />}
+            />
+             <Route path={path.FINISHEDTEST.substring(1)} element={<FinishedTest />} />
+             <Route path={path.NOTIFICATION.substring(1)} element={<Notification />} />
           </Route>
+
           <Route path={path.LOGIN} element={<Login />} />
         </Routes>
       </Router>
