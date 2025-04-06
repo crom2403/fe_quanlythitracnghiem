@@ -88,20 +88,22 @@ const Sitebar = () => {
             <ClipboardIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Phân công
           </Link>
-          <a
-            href="#"
+          <Link
+            to={path.EXAMPAPER}
+            onClick={() => handleLinkClick(path.EXAMPAPER)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <CheckCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Đã kiểm tra
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            to={path.NOTIFICATION}
+            onClick={() => handleLinkClick(path.NOTIFICATION)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <BellIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Thông báo
-          </a>
+          </Link>
         </div>
       </div>
     );

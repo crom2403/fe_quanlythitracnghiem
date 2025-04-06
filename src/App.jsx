@@ -12,6 +12,8 @@ import Question from './modules/question/Question';
 import User from './modules/user/User';
 import Subject from './modules/subject/Subject';
 import Assignment from './modules/assignment/Assignment';
+import FinishedTest from './modules/finishedtest/FinishedTest';
+import Notification from './modules/notification/Notification';
 
 function App() {
   return (
@@ -32,9 +34,14 @@ function App() {
             <Route path={path.TEST.substring(1)} element={<Home />} />
             <Route path={path.MODULE.substring(1)} element={<Module />} />
             <Route path={path.SUBJECT.substring(1)} element={<Subject />} />
-            <Route path={path.ASSIGNMENT.substring(1)} element={<Assignment />} />
+            <Route
+              path={path.ASSIGNMENT.substring(1)}
+              element={<Assignment />}
+            />
+             <Route path={path.FINISHEDTEST.substring(1)} element={<FinishedTest />} />
+             <Route path={path.NOTIFICATION.substring(1)} element={<Notification />} />
           </Route>
-          
+
           <Route path={path.LOGIN} element={<Login />} />
         </Routes>
       </Router>

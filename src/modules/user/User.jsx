@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import CustomModal from '../../components/modal/CustomModal';
 import CustomButton from '../../components/button/CustomButton';
 import { Radio } from '@mui/material';
+import usersFromAPI from './UserService';
 
 const roles = ['Tất cả', 'Giảng viên', 'Sinh viên', 'Admin'];
 const defaultUsers = [
@@ -29,6 +30,21 @@ const User = () => {
   const [users, setUsers] = useState(defaultUsers);
   const [expandedIndex, setExpandedIndex] = useState(null);
   const [activeUser, setActiveUser] = useState(true);
+
+  //Test
+  const [listUser, setListUser]=useState([]);
+  useEffect(()=>{
+    const fetchUsers = async()=>{
+      try{
+        const data = await usersFromAPI();
+        if(data){setListUser(data);}
+      } catch(error){
+        alert("Co loi xay ra khi load users: "+ error.message);
+      }
+    }
+    fetchUsers();
+  }, []);
+
   const handleActiveUser = () => {
     setActiveUser(!activeUser);
   };
@@ -60,6 +76,7 @@ const User = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const totalPages = Math.ceil(users.length / itemsPerPage);
+  // const totalPages = usersssss.totalPages;
   const [currentData, setCurrentData] = useState([]);
 
   useEffect(() => {

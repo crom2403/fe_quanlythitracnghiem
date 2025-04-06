@@ -58,6 +58,20 @@ const defaultSubjects = [
       sotietLT: 30,
       sotietTH: 30,
     },
+    {
+      mamh: '800002',
+      tenmh: 'Nhập môn lập trình',
+      sotinchi: 3,
+      sotietLT: 30,
+      sotietTH: 30,
+    },
+    {
+      mamh: '800002',
+      tenmh: 'Nhập môn lập trình',
+      sotinchi: 3,
+      sotietLT: 30,
+      sotietTH: 30,
+    },
   ];
 const Assignment = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
