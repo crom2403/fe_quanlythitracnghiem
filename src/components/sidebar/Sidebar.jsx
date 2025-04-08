@@ -11,10 +11,11 @@ import {GiNotebook} from 'react-icons/gi';
 import { Link, useNavigate } from 'react-router-dom';
 import path from '../../utils/path';
 import { useState } from 'react';
+import useUserStore from '../../modules/user/useUserStore';
 
 const Sitebar = () => {
-  const role = sessionStorage.getItem('role');
-  const loggedIn = sessionStorage.getItem('loggedIn');
+  const loggedIn = sessionStorage.getItem('user-info');
+  const role = JSON.parse(sessionStorage.getItem('user-info')).role.name;
   const navigate = useNavigate();
   const [activeLink, setActiveLink] = useState(null);
   const handleLinkClick = (link) => {

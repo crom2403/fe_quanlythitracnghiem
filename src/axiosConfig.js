@@ -1,4 +1,5 @@
 import axios from 'axios';
+import useUserStore from './modules/user/useUserStore';
 
 const axiosInstance = axios.create({
     baseURL:'https://inevitable-justinn-tsondev-41d66d2f.koyeb.app/api/v1',
@@ -11,7 +12,10 @@ const axiosInstance = axios.create({
 // Them access token vao request truoc khi gui toi server
 axiosInstance.interceptors.request.use(
     (config) => { //config la doi tuong cau hinh (url, method, headers,...)
-      const accessToken = sessionStorage.getItem('access-token');
+      const userData = sessionStorage.getItem('user-info');
+      let accessToken=null;
+      if(userData!=null)
+        accessToken = JSON.parse(userData).accessToken;
       if (accessToken) {
         config.headers['Authorization'] = `Bearer ${accessToken}`;
       }
