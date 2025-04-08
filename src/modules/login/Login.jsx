@@ -1,4 +1,5 @@
 import '../../styles/loginStyle.css'; // Import file CSS
+import useUserStore from '../user/useUserStore';
 import { login } from './loginService';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -6,35 +7,22 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
   const [mssv, setMssv] = useState('');
   const [pwd, setPwd] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
+  const setUser = useUserStore((state) => state.setUser);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const result = await login(mssv, pwd);
-    if (result.success) {
-      setIsLoggedIn(true);
-      sessionStorage.setItem('role', result.role);
-      sessionStorage.setItem('loggedIn', true);
-      navigate('/dashboard');
-    }
-    else {
-      alert('Thông tin đăng nhập không đúng');
-    }
-  }
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const result = await login(mssv, pwd);
-      if (result!=null) {
-        setIsLoggedIn(true);
-        sessionStorage.setItem('role', 'admin');
-        sessionStorage.setItem('access-token', result.accessToken);
-        sessionStorage.setItem('loggedIn', true);
-        alert("Login successfull! Access token: "+ result.accessToken);
+      if (result != null) {
+        // setUser(result);
+        sessionStorage.setItem('user-info', JSON.stringify(result))
+        const userData = sessionStorage.getItem('user-info')
+        alert("Login successfull! accesstoken: "+ JSON.parse(userData).accessToken);
         navigate('/dashboard');
-      }
+      } else { alert("Login failed!") }
     } catch (err) {
       setError(err.message);
     }

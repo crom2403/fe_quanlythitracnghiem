@@ -7,7 +7,6 @@ const path = {
   USER: '/dashboard/user',
   SUBJECT: '/dashboard/subject',
   ASSIGNMENT: '/dashboard/assignment',
-  TEST: '/test',
   NOTIFICATION: '/dashboard/notification',
   GROUP: '/dashboard/group',
   GROUPDETAIL:'/dashboard/group/detail',

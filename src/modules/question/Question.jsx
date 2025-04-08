@@ -5,13 +5,14 @@ import {
   SearchIcon,
   ArrowDownIcon,
 } from '@heroicons/react/outline';
-import PaginatedTable from '../../components/pagination/PaginatedTable';
 import { useState, useEffect } from 'react';
+import { questions } from './QuestionService';
+import { Radio } from '@mui/material';
 import CustomModal from '../../components/modal/CustomModal';
 import CustomButton from '../../components/button/CustomButton';
-import { Radio } from '@mui/material';
+import PaginatedTable from '../../components/pagination/PaginatedTable';
 
-// Danh sách môn học, chương, độ khó
+// Danh sách môn học, chương, độ khó (giữ nguyên vì chưa có trong API)
 const subjects = [
   'Tất cả',
   'Cấu trúc dữ liệu và giải thuật',
@@ -20,24 +21,6 @@ const subjects = [
 ];
 const chapters = ['Tất cả', 'Chương 1', 'Chương 2', 'Chương 3'];
 const levels = ['Tất cả', 'Dễ', 'Trung bình', 'Khó'];
-
-// Dữ liệu mặc định với id duy nhất
-const defaultQuestions = [
-  {
-    id: 'q1',
-    question: 'Câu hỏi 1',
-    subjectIndex: 1,
-    chapterIndex: 1,
-    levelIndex: 3,
-  },
-  {
-    id: 'q2',
-    question: 'Câu hỏi 2',
-    subjectIndex: 3,
-    chapterIndex: 3,
-    levelIndex: 1,
-  },
-];
 
 const Question = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -50,11 +33,13 @@ const Question = () => {
   const [questionChapterIndex, setQuestionChapterIndex] = useState(0);
   const [questionSubjectIndex, setQuestionSubjectIndex] = useState(0);
   const [questionCorrectAnswerIndex, setQuestionCorrectAnswerIndex] = useState(-1);
-  const [listQuestion, setListQuestion] = useState(defaultQuestions);
-  const [selectedLevelIndex, setSelectedLevelIndex] = useState(0); // Thêm lại selectedLevelIndex
+  const [selectedLevelIndex, setSelectedLevelIndex] = useState(0);
   const [expandedIndex, setExpandedIndex] = useState(null);
-  const [updateQuestionId, setUpdateQuestionId] = useState(null);
   const [isRequestedClearTextarea, setIsRequestedClearTextarea] = useState(false);
+  const [questionsData, setQuestionsData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
 
   const toggleExpand = (index) => {
     setExpandedIndex(index);
@@ -68,10 +53,12 @@ const Question = () => {
     setIsOpenModal(true);
     setModalName(modalName);
   };
+
   const closeModal = () => {
     setIsOpenModal(false);
     setModalName('');
   };
+
   const [activeTab, setActiveTab] = useState('them-thu-cong');
   const handleActiceTab = (tabName) => {
     setActiveTab(tabName);
@@ -100,25 +87,6 @@ const Question = () => {
     setQuestionContent(question);
   };
 
-  const addNewQuestion = (question, chapterIndex, subjectIndex, levelIndex) => {
-    if (!question || chapterIndex === 0 || subjectIndex === 0) {
-      alert('Vui lòng chọn đủ thông tin');
-      return;
-    }
-    const newQuestion = {
-      id: `q${Date.now()}`, // Tạo id duy nhất dựa trên timestamp
-      question,
-      chapterIndex,
-      subjectIndex,
-      levelIndex,
-    };
-
-    setListQuestion((prevList) => [...prevList, newQuestion]);
-    setIsRequestedClearTextarea(true);
-    setListAnswer([]);
-    alert('Đã thêm câu hỏi');
-  };
-
   const handleSubjectChange = (event) => {
     setQuestionSubjectIndex(parseInt(event.target.value));
   };
@@ -129,43 +97,6 @@ const Question = () => {
 
   const handleLevelChange = (event) => {
     setSelectedLevelIndex(parseInt(event.target.value));
-  };
-
-  const handleDeleteQuestion = (questionId) => {
-    const updatedQuestions = listQuestion.filter((q) => q.id !== questionId);
-    setListQuestion(updatedQuestions);
-
-    // Nếu danh sách hiện tại trống sau khi xóa, chuyển về trang trước nếu cần
-    if (updatedQuestions.length <= (currentPage - 1) * itemsPerPage && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleEditQuestion = (questionId) => {
-    const questionToEdit = listQuestion.find((q) => q.id === questionId);
-    setQuestionContent(questionToEdit.question);
-    setQuestionSubjectIndex(questionToEdit.subjectIndex);
-    setQuestionChapterIndex(questionToEdit.chapterIndex);
-    setSelectedLevelIndex(questionToEdit.levelIndex);
-    setUpdateQuestionId(questionId);
-    openModal('sua-cau-hoi');
-  };
-
-  const handleUpdateQuestion = (questionId) => {
-    const updatedList = listQuestion.map((q) =>
-      q.id === questionId
-        ? {
-            ...q,
-            question: questionContent,
-            subjectIndex: questionSubjectIndex,
-            chapterIndex: questionChapterIndex,
-            levelIndex: selectedLevelIndex,
-          }
-        : q
-    );
-    setListQuestion(updatedList);
-    alert('Đã cập nhật câu hỏi');
-    closeModal();
   };
 
   const checkCorrectQuestionAnswerIndex = (index) => {
@@ -184,18 +115,26 @@ const Question = () => {
     return questionContent;
   };
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(listQuestion.length / itemsPerPage);
-  const [currentData, setCurrentData] = useState([]);
-
   useEffect(() => {
-    const data = listQuestion.slice(
-      (currentPage - 1) * itemsPerPage,
-      currentPage * itemsPerPage
-    );
-    setCurrentData(data);
-  }, [listQuestion, currentPage]);
+    const fetchQuestions = async () => {
+      try {
+        const result = await questions(); // Gọi hàm questions từ QuestionService
+        setQuestionsData(result || []); // Lấy toàn bộ câu hỏi từ items
+        setTotalPages(Math.ceil((result?.length || 0) / itemsPerPage)); // Tính tổng số trang dựa trên độ dài items
+      } catch (err) {
+        console.error("Fetch questions failed: " + err.message);
+        setQuestionsData([]);
+        setTotalPages(1);
+      }
+    };
+    fetchQuestions();
+  }, []); // Chỉ gọi một lần khi component mount để lấy toàn bộ câu hỏi
+
+  // Phân trang cục bộ dựa trên questionsData
+  const currentData = questionsData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const renderContent = () => {
     switch (activeTab) {
@@ -319,9 +258,6 @@ const Question = () => {
             <CustomButton
               classname="p-2 text-xl w-4/5 ml-20 mt-8 bg-red-700"
               title="LƯU CÂU HỎI"
-              onClick={() =>
-                addNewQuestion(questionContent, questionChapterIndex, questionSubjectIndex, selectedLevelIndex)
-              }
             />
           </div>
         );
@@ -459,7 +395,6 @@ const Question = () => {
             <CustomButton
               classname="p-2 text-xl w-4/5 ml-20 mt-8 bg-red-700"
               title="LƯU THAY ĐỔI"
-              onClick={() => handleUpdateQuestion(updateQuestionId)}
             />
           </div>
         );
@@ -560,29 +495,30 @@ const Question = () => {
                       className={`flex-1 max-w-130 text-center ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
                       onClick={() => toggleExpand(index)}
                     >
-                      {item.question}
+                      {item.content}
                     </div>
                   </td>
                   <td className="text-center overflow-hidden w-full">
                     <div
                       className={`flex-1 max-w-full text-center ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
-                      onClick={() => toggleExpand(index)}
                     >
-                      {subjects[item.subjectIndex]}
+                      {/* Môn học chưa có trong API, tạm để mặc định */}
+                      {subjects[0]}
                     </div>
                   </td>
-                  <td className="text-center pr-8">{levels[item.levelIndex]}</td>
+                  <td className="text-center pr-8">
+                    {item.difficulty_level.charAt(0).toUpperCase() + item.difficulty_level.slice(1)}
+                  </td>
                   <td className="text-center">
                     <div className="flex items-center justify-center space-x-2">
                       <div
-                        onClick={() => handleEditQuestion(item.id)}
+                        onClick={() => openModal('sua-cau-hoi')}
                         className="text-white bg-blue-900 rounded-2xl p-1"
                       >
                         <PencilIcon className="w-5 h-5" />
                       </div>
                       <div
                         className="text-white bg-red-700 rounded-2xl p-1"
-                        onClick={() => handleDeleteQuestion(item.id)}
                       >
                         <XIcon className="w-5 h-5" />
                       </div>
