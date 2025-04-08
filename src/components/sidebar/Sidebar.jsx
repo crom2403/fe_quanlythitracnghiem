@@ -129,9 +129,9 @@ const Sitebar = () => {
 
         <div className="flex flex-col p-4 space-y-2">
           <Link
-            to={path.Course}
-            onClick={() => handleLinkClick(path.Course)}
-            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.GROUP)}`}
+            to={path.COURSEGROUP}
+            onClick={() => handleLinkClick(path.COURSEGROUP)}
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.COURSEGROUP)}`}
           >
             <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Nhóm học phần
@@ -139,7 +139,7 @@ const Sitebar = () => {
           <Link
             to={path.TEST}
             onClick={() => handleLinkClick(path.TEST)}
-            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.TEST)}`}
           >
             {/* lớp transform cho phép các hiệu ứng biến đổi như scale, rotate, translate,...*/}
             {/* transition-all áp dụng hiệu ứng chuyển tiếp cho tất cả các thuộc tính có thể thay đổi, tạo hiệu ứng mượt mà */}

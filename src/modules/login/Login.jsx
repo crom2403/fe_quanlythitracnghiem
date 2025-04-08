@@ -29,7 +29,7 @@ const Login = () => {
       const result = await login(mssv, pwd);
       if (result!=null) {
         setIsLoggedIn(true);
-        sessionStorage.setItem('role', 'admin');
+        sessionStorage.setItem('role', 'student');
         sessionStorage.setItem('access-token', result.accessToken);
         sessionStorage.setItem('loggedIn', true);
         alert("Login successfull! Access token: "+ result.accessToken);

@@ -1,64 +1,9 @@
-import { useState, useEffect } from "react"; // Thêm useEffect vào import
+import { useState, useEffect } from "react";
 import dayjs from "dayjs";
-import ExamComponent from "./Exam.jsx"; 
-import { useNavigate, useParams } from "react-router-dom"; // Đã có useNavigate và useParams
-
-const mockTests = [
-  {
-    id: 1,
-    courseGroupId: 1,
-    title: "Kiểm tra giữa kỳ",
-    subject: "Cơ sở dữ liệu phân tán - NH2022 - HK2",
-    startTime: "2025-03-28T08:00:00",
-    endTime: "2025-03-28T10:00:00",
-  },
-  {
-    id: 2,
-    courseGroupId: 2,
-    title: "Đồ án cuối kỳ",
-    subject: "Phát triển ứng dụng di động - NH2022 - HK2",
-    startTime: "2025-03-25T14:00:00",
-    endTime: "2025-04-01T23:59:00",
-  },
-  {
-    id: 3,
-    courseGroupId: 3,
-    title: "Bài tập lớn số 3",
-    subject: "Trí tuệ nhân tạo - NH2022 - HK2",
-    startTime: "2025-04-02T09:00:00",
-    endTime: "2025-04-02T12:00:00",
-  },
-  {
-    id: 4,
-    courseGroupId: 4,
-    title: "Kiểm tra cuối kỳ",
-    subject: "An toàn và bảo mật thông tin - NH2022 - HK2",
-    startTime: "2025-03-30T07:00:00",
-    endTime: "2025-04-01T07:00:00",
-  },
-  {
-    id: 5,
-    courseGroupId: 5,
-    title: "Quiz online",
-    subject: "Học máy - NH2022 - HK2",
-    startTime: "2025-03-31T13:00:00",
-    endTime: "2025-03-31T14:30:00",
-  }
-];
-
-function getTestStatus(startTime, endTime) {
-  const now = dayjs();
-  const start = dayjs(startTime);
-  const end = dayjs(endTime);
-
-  if (now.isBefore(start)) {
-    return "Chưa mở";
-  } else if (now.isAfter(end)) {
-    return "Đã đóng";
-  } else {
-    return "Đang mở";
-  }
-}
+import ExamComponent from "./Exam.jsx";
+import { useNavigate, useParams } from "react-router-dom";
+import axiosInstance from "../../axiosConfig";
+import useExamStore from "../store/examStore";
 
 export default function TestLayout() {
   const navigate = useNavigate();
@@ -69,40 +14,107 @@ export default function TestLayout() {
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [tests, setTests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [fetchingDetail, setFetchingDetail] = useState(false); // Thêm trạng thái fetchingDetail
 
-  // Tự động chọn bài kiểm tra nếu có testId từ URL
+  const { setExamDetail } = useExamStore();
+
+  useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get("/exam/get-all-exams-of-student");
+        const apiTests = response.data;
+
+        const mappedTests = apiTests.map((test) => ({
+          id: test.id || 0,
+          courseGroupId: test.id || 0,
+          title: typeof test.exam_id === "string" ? test.exam_id : "Không có tiêu đề",
+          subject: typeof test.group_student_name === "string" ? test.group_student_name : "Không có môn học",
+          startTime: "2025-04-07T09:00:00",
+          endTime: "2025-04-010T11:00:00",
+        }));
+
+        setTests(mappedTests);
+      } catch (err) {
+        setError("Không thể tải danh sách đề thi. Vui lòng thử lại sau.");
+        console.error("Lỗi khi gọi API:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTests();
+  }, []);
+
   useEffect(() => {
     if (testId) {
-      const test = mockTests.find(t => t.courseGroupId === parseInt(testId));
+      const test = tests.find((t) => t.courseGroupId === parseInt(testId));
       if (test) {
         setSelectedTest(test);
       }
     }
-  }, [testId]);
+  }, [testId, tests]);
 
-  const filteredTests = mockTests.filter((test) => {
+  const getTestStatus = (startTime, endTime) => {
+    if (!startTime || !endTime) {
+      return "Không xác định";
+    }
+    const now = dayjs();
+    const start = dayjs(startTime);
+    const end = dayjs(endTime);
+
+    if (now.isBefore(start)) {
+      return "Chưa mở";
+    } else if (now.isAfter(end)) {
+      return "Đã đóng";
+    } else {
+      return "Đang mở";
+    }
+  };
+
+  const filteredTests = tests.filter((test) => {
     const lowerSearch = searchTerm.toLowerCase();
-    const matchesSearch = test.title.toLowerCase().includes(lowerSearch) ||
-      test.subject.toLowerCase().includes(lowerSearch);
-    
+    const title = typeof test.title === "string" ? test.title.toLowerCase() : "";
+    const subject = typeof test.subject === "string" ? test.subject.toLowerCase() : "";
+    const matchesSearch = title.includes(lowerSearch) || subject.includes(lowerSearch);
+
     const status = getTestStatus(test.startTime, test.endTime);
     const matchesStatus = statusFilter === "all" || status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
-  const handleViewDetail = (test) => {
-    setSelectedTest(test);
-    setIsExamStarted(false);
+  const handleViewDetail = async (test) => {
+    try {
+      setFetchingDetail(true); // Bắt đầu fetching
+      const response = await axiosInstance.get(`/exam/${test.id}`);
+      const examDetail = response.data;
+      console.log("Dữ liệu từ API số 32:", examDetail);
+
+      setExamDetail(examDetail);
+      setSelectedTest(test);
+      setIsExamStarted(false);
+    } catch (err) {
+      console.error("Lỗi khi lấy chi tiết đề thi:", err);
+      setError("Không thể lấy chi tiết đề thi. Vui lòng thử lại sau.");
+    } finally {
+      setFetchingDetail(false); // Kết thúc fetching
+    }
   };
 
   const handleCloseDetail = () => {
     setSelectedTest(null);
     setIsExamStarted(false);
-    navigate('/dashboard/test');
+    navigate("/dashboard/test");
   };
 
   const handleStartExam = () => {
+    if (fetchingDetail) {
+      return; // Không cho phép bắt đầu thi nếu đang fetching
+    }
     setIsExamStarted(true);
   };
 
@@ -125,7 +137,15 @@ export default function TestLayout() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
         <div className="bg-white shadow-2xl rounded-xl overflow-hidden w-full max-w-md transform transition-all duration-300 hover:scale-105">
-          <div className={`p-6 text-center ${status === "Chưa mở" ? "bg-gray-100" : status === "Đang mở" ? "bg-green-50" : "bg-red-50"}`}>
+          <div
+            className={`p-6 text-center ${
+              status === "Chưa mở"
+                ? "bg-gray-100"
+                : status === "Đang mở"
+                ? "bg-green-50"
+                : "bg-red-50"
+            }`}
+          >
             <h2 className="text-3xl font-extrabold text-gray-800 mb-4 tracking-tight">
               Chuẩn bị làm bài thi
             </h2>
@@ -140,15 +160,27 @@ export default function TestLayout() {
               </div>
               <div className="flex items-center justify-between border-b pb-2">
                 <span className="font-semibold text-gray-600">Bắt đầu:</span>
-                <span className="font-bold text-blue-700">{dayjs(test.startTime).format("DD/MM/YYYY HH:mm")}</span>
+                <span className="font-bold text-blue-700">
+                  {test.startTime ? dayjs(test.startTime).format("DD/MM/YYYY HH:mm") : "Không xác định"}
+                </span>
               </div>
               <div className="flex items-center justify-between border-b pb-2">
                 <span className="font-semibold text-gray-600">Kết thúc:</span>
-                <span className="font-bold text-red-700">{dayjs(test.endTime).format("DD/MM/YYYY HH:mm")}</span>
+                <span className="font-bold text-red-700">
+                  {test.endTime ? dayjs(test.endTime).format("DD/MM/YYYY HH:mm") : "Không xác định"}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-gray-600">Trạng thái:</span>
-                <span className={`font-bold ${status === "Chưa mở" ? "text-gray-500" : status === "Đang mở" ? "text-green-600" : "text-red-600"}`}>
+                <span
+                  className={`font-bold ${
+                    status === "Chưa mở"
+                      ? "text-gray-500"
+                      : status === "Đang mở"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
                   {status}
                 </span>
               </div>
@@ -156,10 +188,16 @@ export default function TestLayout() {
             <div className="flex justify-center space-x-4">
               {status === "Đang mở" ? (
                 <button
-                  onClick={() => { handleStartExam(); navigate("/dashboard/exam"); }}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-md hover:shadow-lg"
+                  onClick={() => {
+                    handleStartExam();
+                    navigate("/dashboard/exam");
+                  }}
+                  className={`bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-md hover:shadow-lg ${
+                    fetchingDetail ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                  disabled={fetchingDetail}
                 >
-                  Bắt đầu làm bài
+                  {fetchingDetail ? "Đang tải..." : "Bắt đầu làm bài"}
                 </button>
               ) : (
                 <button
@@ -183,6 +221,22 @@ export default function TestLayout() {
   };
 
   const renderTestList = () => {
+    if (loading) {
+      return (
+        <div className="container mx-auto px-4 py-8 text-center">
+          <p className="text-gray-600">Đang tải danh sách đề thi...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="container mx-auto px-4 py-8 text-center">
+          <p className="text-red-600">{error}</p>
+        </div>
+      );
+    }
+
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white shadow-lg rounded-xl overflow-hidden mb-6">
@@ -194,13 +248,20 @@ export default function TestLayout() {
               >
                 {statusFilter === "all" ? "Tất cả" : statusFilter}
                 <svg
-                  className={`w-4 h-4 ml-2 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                  className={`w-4 h-4 ml-2 transition-transform ${
+                    isDropdownOpen ? "rotate-180" : ""
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
                 </svg>
               </button>
               {isDropdownOpen && (
@@ -256,11 +317,11 @@ export default function TestLayout() {
                 Không có đề thi phù hợp.
               </p>
             )}
-            {filteredTests.map((test) => {
+            {filteredTests.map((test, index) => {
               const status = getTestStatus(test.startTime, test.endTime);
               return (
                 <div
-                  key={test.id}
+                  key={`${test.id}-${index}`}
                   className="bg-white border border-gray-200 rounded-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:border-blue-300 hover:scale-[1.02]"
                 >
                   <div className="p-4 flex justify-between items-center">
@@ -269,16 +330,25 @@ export default function TestLayout() {
                         {test.title}
                       </h3>
                       <p className="text-sm text-gray-600 mb-1 flex items-center">
-                        <span className="mr-2">📚</span>{test.subject}
+                        <span className="mr-2">📚</span>
+                        {test.subject}
                       </p>
                       <p className="text-sm italic text-gray-500 flex items-center">
                         <span className="mr-2">⏰</span>
-                        Diễn ra từ {dayjs(test.startTime).format("DD/MM/YYYY HH:mm")} đến {dayjs(test.endTime).format("DD/MM/YYYY HH:mm")}
+                        Diễn ra từ{" "}
+                        {test.startTime ? dayjs(test.startTime).format("DD/MM/YYYY HH:mm") : "Không xác định"} đến{" "}
+                        {test.endTime ? dayjs(test.endTime).format("DD/MM/YYYY HH:mm") : "Không xác định"}
                       </p>
                     </div>
                     <div className="flex items-center space-x-4">
                       <span
-                        className={`font-bold ${status === "Chưa mở" ? "text-gray-500" : status === "Đang mở" ? "text-green-600" : "text-red-600"}`}
+                        className={`font-bold ${
+                          status === "Chưa mở"
+                            ? "text-gray-500"
+                            : status === "Đang mở"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
                       >
                         {status}
                       </span>
