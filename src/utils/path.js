@@ -13,6 +13,9 @@ const path = {
   GROUPDETAIL:'/dashboard/group/detail',
   EXAMPAPER:'/dashboard/group/detail/exampaper',
   QUESTION: '/dashboard/question',
+  COURSEMANAGEMENT:'/dashboard/COURSEMANAGEMENT',
+  EXAMMANAGEMENT:'/dashboard/exammanagement'
+  
 };
 
 export default path;

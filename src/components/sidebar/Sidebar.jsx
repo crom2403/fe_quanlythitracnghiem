@@ -104,8 +104,77 @@ const Sitebar = () => {
     );
   } else if (role === 'giangvien') {
     return (
-      <div>
-        <h1>GIẢNG VIÊN SIDEBAR</h1>
+      <div
+        className="w-full h-full bg-white-200"
+        style={{ fontFamily: 'Playfair Display' }}
+      >
+        <div className="flex items-center justify-center h-16 bg-red-700 text-white">
+          <h1 className="text-2xl font-bold">STU Test</h1>
+        </div>
+        <div className="mt-10 pt-2 pb-2 w-9/10 mx-auto text-lg font-semibold flex items-center bg-black rounded-xl text-white">
+          <ViewGridIcon className="h-6 w-6 text-white mr-2 pl-2" />
+          Tổng quan
+        </div>
+
+        <div className="flex flex-col p-4 space-y-2">
+          <Link
+            to={path.GROUP}
+            onClick={() => handleLinkClick(path.GROUP)}
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.GROUP)}`}
+          >
+            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Nhóm học phần
+          </Link>
+          <Link
+            to={path.QUESTION}
+            onClick={() => handleLinkClick(path.QUESTION)}
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Câu hỏi
+          </Link>
+          <a
+            href="#"
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <UserIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Thông tin cá nhân
+          </a>
+          
+          <Link
+           to={path.COURSEMANAGEMENT}
+           onClick={() => handleLinkClick(path.COURSEMANAGEMENT)}
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <BookOpenIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Môn học
+          </Link> 
+           
+          <a
+            href="#"
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <ClipboardIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Phân công
+          </a>
+
+
+          <Link
+           to={path.EXAMMANAGEMENT}
+           onClick={()=>handleLinkClick(path.EXAMMANAGEMENT)}
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <CheckCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Đề kiểm tra
+          </Link>
+          <a
+            href="#"
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <BellIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Thông báo
+          </a>
+        </div>
       </div>
     );
   } else {

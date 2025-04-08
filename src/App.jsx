@@ -9,6 +9,8 @@ import Group from './modules/group/Group';
 import GroupDetail from './modules/groupdetail/GroupDetail';
 import ExamPaper from './modules/exampaper/ExamPaper';
 import Question from './modules/question/Question';
+import CourseManagement from './modules/courseManagement/CourseManagement';
+import ExamManagement from './modules/exam/ExamManagement';
 
 function App() {
   return (
@@ -35,6 +37,9 @@ function App() {
             <Route path={path.MODULE.substring(1)} element={<Module />} />
             <Route path={path.QUESTION.substring(1)} element={<Home />} />
             <Route path={path.SUBJECT.substring(1)} element={<Home />} />
+            <Route path={path.COURSEMANAGEMENT.substring(1)} element={<CourseManagement />} />
+
+            <Route path={path.EXAMMANAGEMENT.substring(1)} element={<ExamManagement />} />
           </Route>
           <Route path={path.LOGIN} element={<Login />} />
         </Routes>
