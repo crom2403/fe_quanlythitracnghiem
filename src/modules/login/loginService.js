@@ -1,11 +1,11 @@
-export const login = async (mssv, pwd) => {
-  if (mssv === 'DH52101497' && pwd === '123') {
-    return { success: true, role: 'sinhvien' };
-  } else if (mssv === 'DH52100000' && pwd === '123') {
-    return { success: true, role: 'admin' };
-  } else if (mssv === 'DH52100001' && pwd === '123') {
-    return { success: true, role: 'giangvien' };
-  } else {
-    return { success: false };
+import axiosInstance from "../../axiosConfig";
+
+export const login = async (student_code, password) =>{
+  try{
+    const response = await axiosInstance.post('/auth/login', {student_code, password});
+    return response.data;
+  } catch (error){
+    alert('Login failed: '+ error.message);
   }
 };
+

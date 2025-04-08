@@ -1,31 +1,42 @@
 import '../../styles/loginStyle.css'; // Import file CSS
-import {login} from './loginService';
-import {useState} from 'react';
+import useUserStore from '../user/useUserStore';
+import { login } from './loginService';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [mssv, setMssv] = useState('');
   const [pwd, setPwd] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
-  
-  const handleSubmit = async (e) =>{
+  const setUser = useUserStore((state) => state.setUser);
+
+
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const result = await login(mssv, pwd);
-    if(result.success){
-      setIsLoggedIn(true);
-      sessionStorage.setItem('role',result.role);
-      sessionStorage.setItem('loggedIn',true);
-      navigate('/dashboard');
+    try {
+      const result = await login(mssv, pwd);
+
+      if (result != null) {
+        sessionStorage.setItem('role', result.role.name);
+        sessionStorage.setItem('access-token', result.accessToken);
+        sessionStorage.setItem('loggedIn', true);
+        alert("Login successfull! Access token: ");
+        if (result != null) {
+          // setUser(result);
+          sessionStorage.setItem('user-info', JSON.stringify(result))
+          const userData = sessionStorage.getItem('user-info')
+          navigate('/dashboard');
+        } else { alert("Login failed!"); }
+      }
+    } catch (err) {
+      console.log("Lỗi: "+err.message);
     }
-    else{
-      alert('Thông tin đăng nhập không đúng');
-    }
-  }
+  };
   return (
     <div className="flex items-center justify-center w-full h-screen bg-blue-300">
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleLogin}
         className="flex flex-col items-center bg-white p-8 rounded-lg shadow-lg w-[30rem] h-[35rem]"
         style={{ fontFamily: 'Plaayfair Display' }
         }
@@ -34,23 +45,23 @@ const Login = () => {
           LOGIN
         </h2>
         <label className="block text-blue-700 text-left w-full mb-2 ml-10 text-xl">
-          MSSV
+          Mã người dùng
         </label>
         <input
           type="text"
           value={mssv}
-          onChange={(e)=>setMssv(e.target.value)}
+          onChange={(e) => setMssv(e.target.value)}
           className="border w-9/10 p-2 rounded-md mt-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xl"
           required
         ></input>
 
         <label className="block text-blue-700 text-left w-full mb-2 mt-2 ml-10 text-xl">
-          Password
+          Mật khẩu
         </label>
         <input
           type="password"
           value={pwd}
-          onChange={(e)=>setPwd(e.target.value)}
+          onChange={(e) => setPwd(e.target.value)}
           className="border w-9/10 p-2 rounded-md mt-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xl"
           required
         ></input>

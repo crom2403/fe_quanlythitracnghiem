@@ -2,7 +2,7 @@ import {
   PlusIcon,
   SearchIcon,
   CogIcon,
-  UserCircleIcon,
+  XCircleIcon,
   XIcon,
   SortAscendingIcon,
   SortDescendingIcon,
@@ -10,28 +10,50 @@ import {
   BellIcon,
   ClockIcon,
 } from '@heroicons/react/outline';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FaFile } from 'react-icons/fa';
+import { createInviteCode, detail } from './GroupDetaillService';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSelectedGroupDetailStore } from '../group/useGroupStore';
+import { useLocation } from 'react-router-dom';
+
 import Modal from 'react-modal';
 import CustomModal from '../../components/modal/CustomModal';
-import { createInviteCode } from './groupdetailService';
-import { Link } from 'react-router-dom';
 import path from '../../utils/path';
 
 Modal.setAppElement('#root');
 
 const GroupDetail = () => {
-  const hocphan = [
-    ['CS0000-Cấu trúc dữ liệu và giải thuật-NH2025-HK1-Nhóm 1'],
-    23,
-    ['Lê Yến Đan', 'DH52101497', 'Nữ', '15/02/2003'],
-    ['Trần Thanh Sơn', 'DH5210000', 'Nam', '31/02/2000'],
-    ['Nguyễn Dư Ngọc Thiện', 'DH5210001', 'Nam', '31/11/2000'],
-    ['Võ Minh Thiện', 'DH5210002', 'Nam', '1/11/2000'],
-    ['Phan Anh Tuấn', 'DH5210003', 'Nam', '1/6/2000'],
-    ['Phan Anh Dũng', 'DH5210003', 'Nam', '1/6/2000'],
-    ['Phan Minh Tuấn', 'DH5210003', 'Nam', '1/6/2000'],
-  ];
+  const [students, setStudents] = useState([]);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const selectedGroupDetail = location.state?.selectedGroupDetail || {
+    groupId: -1,
+    groupName: '',
+    studentCount: 0
+  };
+  useEffect(() => {
+    if (selectedGroupDetail.groupId === -1) {
+      navigate(path.GROUP);
+    }
+    const fetchStudents = async () => {
+      try {
+        const groupId = selectedGroupDetail.groupId;
+        const result = await detail(groupId);
+        if (Array.isArray(result)) {
+          setStudents(result);
+        } else {
+          setStudents([]);
+        }
+      } catch (err) {
+        console.error('Lỗi khi fetch sinh viên:', err);
+        setStudents([]);
+      }
+    };
+
+    fetchStudents();
+  }, [selectedGroupDetail?.groupId]);
+
   const de = [
     ['Đề tạo thủ công', '12:00:00 01/01/2025', '12:00:00 02/01/2025'],
     ['Đề kiểm tra tuần 12', '12:00:00 01/09/2025', '12:00:00 02/01/2025'],
@@ -166,7 +188,7 @@ const GroupDetail = () => {
                   className="w-full text-black space-y-2 mt-4 bg-blue-50 pl-4 h-25 pt-4 border-l-3 border-blue-900 rounded-2xl"
                 >
                   <div className="text-2xl text-blue-800">
-                    <Link to={path.EXAMPAPER} onClick={()=>handleLinkClick(path.EXAMPAPER)}>{item[0]}</Link>
+                    <Link to={path.FINISHEDTEST} onClick={() => handleLinkClick(path.FINISHEDTEST)}>{item[0]}</Link>
                   </div>
                   <div className="flex items-center space-x-1">
                     <ClockIcon className="w-4 h-4" />{' '}
@@ -322,17 +344,19 @@ const GroupDetail = () => {
       </div>
       <div className="ml-16 mr-16 mt-8 bg-white rounded-t-xl">
         <div className="w-full h-16 bg-gray-200 text-xl flex items-center rounded-t-xl">
-          {hocphan[0][0]}
-          <p className="ml-auto mr-8 text-gray-500">Sĩ số: {hocphan[1]} </p>
+          <p className='ml-4'>{selectedGroupDetail.groupName ?? 'Khong xac dinh'}</p>
+          <p className="ml-auto mr-8 text-gray-500">Sĩ số: {selectedGroupDetail.studentCount ?? 1} </p>
         </div>
         <div className="overflow-auto max-h-140">
-          <table className="w-full h-auto mt-4">
-            <thead>
-              <tr className="text-xl">
+          <table className="w-full h-auto">
+            <thead className='bg-blue-900 text-white'>
+              <tr className="text-xl h-16">
                 <th className="">STT</th>
-                <th className="text-left flex items-center">
-                  Họ tên <SortAscendingIcon className="w-5 h-5 ml-2" />
-                  <SortDescendingIcon className="w-5 h-5 ml-2" />
+                <th className="text-left ">
+                  <div className='flex items-center'>
+                    <p>Họ tên</p> <SortAscendingIcon className="w-5 h-5 ml-2 hover:text-yellow-300"/>
+                    <SortDescendingIcon className="w-5 h-5 ml-2" />
+                  </div>
                 </th>
                 <th className="">Mã sinh viên</th>
                 <th className="">Giới tính</th>
@@ -341,20 +365,15 @@ const GroupDetail = () => {
               </tr>
             </thead>
             <tbody className="">
-              {hocphan.slice(2).map((item, index) => (
-                <tr key={index} className="text-center space-y-8 text-xl">
-                  <td className="">{index + 1}</td>
-                  <td className="text-left flex items-center align-middle pt-8">
-                    <UserCircleIcon className="w-10 h-10 text-gray-600 mr-2" />{' '}
-                    <p className="text-blue-600">{item[0]}</p>
-                  </td>
-                  <td>{item[1]}</td>
-                  <td>{item[2]}</td>
-                  <td>{item[3]}</td>
+              {students.map((student, index) => (
+                <tr key={index} className={`text-center text-xl h-10 hover:bg-blue-100`}>
+                  <td className=''>{index + 1}</td>
+                  <td>{student.fullname}</td>
+                  <td>{student.student_code}</td>
+                  <td>{student.gender}</td>
+                  <td>{student.birthday}</td>
                   <td className="flex flex-col items-center">
-                    <div className="text-center bg-black text-white rounded-xl">
-                      <XIcon className="w-5 h-5 m-2" />
-                    </div>
+                    <XCircleIcon className="w-8 h-8 m-2 bg-blue-800 text-white rounded-2xl hover:bg-red-800" />
                   </td>
                 </tr>
               ))}
