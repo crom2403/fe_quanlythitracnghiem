@@ -1,0 +1,82 @@
+[
+    {
+      "question": "React được phát triển bởi công ty nào?",
+      "options": ["Google", "Facebook", "Microsoft", "Amazon"],
+      "correctAnswer": "Facebook",
+      "subject": "Lập trình",
+      "chapter": "React",
+      "difficulty": "Dễ"
+    },
+    {
+      "question": "Phương thức nào KHÔNG thuộc vòng đời của React Component?",
+      "options": ["componentDidMount", "componentWillUpdate", "renderComponent", "componentDidUpdate"],
+      "correctAnswer": "renderComponent",
+      "subject": "Lập trình",
+      "chapter": "React",
+      "difficulty": "Trung bình"
+    },
+    {
+      "question": "Redux được sử dụng để làm gì trong ứng dụng React?",
+      "options": ["Định tuyến (routing)", "Quản lý state", "Xác thực người dùng", "Gọi API"],
+      "correctAnswer": "Quản lý state",
+      "subject": "Lập trình",
+      "chapter": "React",
+      "difficulty": "Trung bình"
+    },
+    {
+      "question": "Thuộc tính nào trong CSS dùng để điều chỉnh khoảng cách giữa các phần tử?",
+      "options": ["margin", "padding", "border", "display"],
+      "correctAnswer": "margin",
+      "subject": "Web",
+      "chapter": "CSS",
+      "difficulty": "Dễ"
+    },
+    {
+      "question": "Câu lệnh SQL nào dùng để lấy dữ liệu từ database?",
+      "options": ["INSERT", "UPDATE", "SELECT", "DELETE"],
+      "correctAnswer": "SELECT",
+      "subject": "Cơ sở dữ liệu",
+      "chapter": "SQL",
+      "difficulty": "Dễ"
+    },
+    {
+      "question": "Thuật toán sắp xếp nào có độ phức tạp trung bình là O(n log n)?",
+      "options": ["Bubble Sort", "Quick Sort", "Selection Sort", "Insertion Sort"],
+      "correctAnswer": "Quick Sort",
+      "subject": "Lập trình",
+      "chapter": "Cơ bản",
+      "difficulty": "Khó"
+    },
+    {
+      "question": "Trong JavaScript, phương thức nào được sử dụng để thêm một phần tử vào cuối mảng?",
+      "options": ["push()", "pop()", "shift()", "unshift()"],
+      "correctAnswer": "push()",
+      "subject": "Lập trình",
+      "chapter": "JavaScript",
+      "difficulty": "Dễ"
+    },
+    {
+      "question": "DNS là viết tắt của?",
+      "options": ["Domain Name System", "Digital Network Service", "Data Network Storage", "Dynamic Name Server"],
+      "correctAnswer": "Domain Name System",
+      "subject": "Mạng máy tính",
+      "chapter": "Cơ bản",
+      "difficulty": "Dễ"
+    },
+    {
+      "question": "Mô hình nào không phải là một mô hình kiến trúc phần mềm?",
+      "options": ["MVC", "MVP", "MVVM", "HTTP"],
+      "correctAnswer": "HTTP",
+      "subject": "Lập trình",
+      "chapter": "Cơ bản",
+      "difficulty": "Trung bình"
+    },
+    {
+      "question": "Thuật ngữ 'ORM' trong phát triển web liên quan đến?",
+      "options": ["Object-Relational Mapping", "Online Resource Management", "Operational Risk Monitoring", "Object Response Model"],
+      "correctAnswer": "Object-Relational Mapping",
+      "subject": "Cơ sở dữ liệu",
+      "chapter": "Cơ bản",
+      "difficulty": "Trung bình"
+    }
+  ]
