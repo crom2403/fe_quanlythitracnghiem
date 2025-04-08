@@ -16,14 +16,21 @@ const Login = () => {
     e.preventDefault();
     try {
       const result = await login(mssv, pwd);
+
       if (result != null) {
-        sessionStorage.setItem('user-info', JSON.stringify(result))
-        const userData = sessionStorage.getItem('user-info')
-        alert("Login successfull! accesstoken: "+ JSON.parse(userData).accessToken);
-        navigate('/dashboard');
-      } else { alert("Login failed!") }
+        sessionStorage.setItem('role', result.role.name);
+        sessionStorage.setItem('access-token', result.accessToken);
+        sessionStorage.setItem('loggedIn', true);
+        alert("Login successfull! Access token: ");
+        if (result != null) {
+          // setUser(result);
+          sessionStorage.setItem('user-info', JSON.stringify(result))
+          const userData = sessionStorage.getItem('user-info')
+          navigate('/dashboard');
+        } else { alert("Login failed!"); }
+      }
     } catch (err) {
-      setError(err.message);
+      console.log("Lỗi: "+err.message);
     }
   };
   return (
@@ -49,7 +56,7 @@ const Login = () => {
         ></input>
 
         <label className="block text-blue-700 text-left w-full mb-2 mt-2 ml-10 text-xl">
-          Password
+          Mật khẩu
         </label>
         <input
           type="password"
