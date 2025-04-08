@@ -1,6 +1,6 @@
 import axiosInstance from "../../axiosConfig";
 
-const usersFromAPI = async () => {
+export const usersFromAPI = async () => {
     try {
         const response = await axiosInstance.get('/users');
         return response.data;

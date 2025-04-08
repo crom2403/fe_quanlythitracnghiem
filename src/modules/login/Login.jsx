@@ -17,7 +17,6 @@ const Login = () => {
     try {
       const result = await login(mssv, pwd);
       if (result != null) {
-        // setUser(result);
         sessionStorage.setItem('user-info', JSON.stringify(result))
         const userData = sessionStorage.getItem('user-info')
         alert("Login successfull! accesstoken: "+ JSON.parse(userData).accessToken);

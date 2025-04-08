@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import CustomModal from '../../components/modal/CustomModal';
 import CustomButton from '../../components/button/CustomButton';
 import { Radio } from '@mui/material';
-import usersFromAPI from './UserService';
+import {usersFromAPI} from './UserService';
 
 const roles = ['Tất cả', 'Giảng viên', 'Sinh viên', 'Admin'];
 const defaultUsers = [
