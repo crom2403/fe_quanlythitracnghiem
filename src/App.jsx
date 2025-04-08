@@ -33,7 +33,6 @@ function App() {
               path={path.QUESTION.substring(1)}
               element={<Question />}
             />
-            <Route path={path.TEST.substring(1)} element={<Home />} />
             <Route path={path.MODULE.substring(1)} element={<Module />} />
             <Route path={path.QUESTION.substring(1)} element={<Home />} />
             <Route path={path.SUBJECT.substring(1)} element={<Home />} />
