@@ -16,11 +16,18 @@ const Login = () => {
     e.preventDefault();
     try {
       const result = await login(mssv, pwd);
+
+      if (result!=null) {
+        setIsLoggedIn(true);
+        sessionStorage.setItem('role', 'student');
+        sessionStorage.setItem('access-token', result.accessToken);
+        sessionStorage.setItem('loggedIn', true);
+        alert("Login successfull! Access token: "+ result.accessToken);
       if (result != null) {
         // setUser(result);
         sessionStorage.setItem('user-info', JSON.stringify(result))
         const userData = sessionStorage.getItem('user-info')
-        alert("Login successfull! accesstoken: "+ JSON.parse(userData).accessToken);
+        alert("Login successfull! accesstoken: "+ JSON.parse(userData).acce
         navigate('/dashboard');
       } else { alert("Login failed!") }
     } catch (err) {

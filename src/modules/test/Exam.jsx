@@ -1,97 +1,60 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import useExamStore from "../store/examStore";
+import axiosInstance from "../../axiosConfig";
 
 export default function ExamPage() {
   const navigate = useNavigate();
+  const { examDetail } = useExamStore();
+  console.log("examDetail trong ExamPage:", examDetail);
 
-  // Thời gian làm bài (ví dụ 10 phút = 600 giây)
-  const [timeRemaining, setTimeRemaining] = useState(600);
-  // Trạng thái bài thi: "ongoing" (đang làm) hoặc "submitted" (đã nộp)
+  const [timeRemaining, setTimeRemaining] = useState(
+    examDetail ? examDetail.duration_minutes * 60 : 600
+  );
   const [examState, setExamState] = useState("ongoing");
-
-  // Hiển thị pop-up xác nhận nộp bài
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
-
-  // Theo dõi số lần chuyển tab
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
-  
-  // Hiển thị cảnh báo
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
+  const [questions, setQuestions] = useState([]);
 
-  // Danh sách câu hỏi (ví dụ)
-  const [questions, setQuestions] = useState([
-    {
-      id: 1,
-      text: "Đối với quyền truy cập nào thì cho phép truy cập các lớp con cùng gói với lớp cha?",
-      options: [
-        { id: "A", text: "A private, friendly, protected." },
-        { id: "B", text: "Friendly, protected, public." },
-        { id: "C", text: "Public, protected." },
-        { id: "D", text: "Friendly, public." },
-      ],
-      selectedAnswer: null,
-    },
-    {
-      id: 2,
-      text: "Từ khóa nào được sử dụng để khai báo một phương thức được ghi đè trong Java?",
-      options: [
-        { id: "A", text: "Super" },
-        { id: "B", text: "Overload" },
-        { id: "C", text: "Tất cả đều đúng" },
-        { id: "D", text: "Override" },
-      ],
-      selectedAnswer: null,
-    },
-    {
-      id: 3,
-      text: "Khi một thành phần của class được khai báo modifier là friendly thì thành phần đó:",
-      options: [
-        { id: "A", text: "Cho phép các đối tượng thuộc các class cùng package truy cập." },
-        { id: "B", text: "Cho phép các đối tượng thuộc class cùng package như class truy cập." },
-        { id: "C", text: "Cho phép các đối tượng thuộc lớp con truy cập." },
-        { id: "D", text: "Cho phép truy cập." },
-      ],
-      selectedAnswer: null,
-    },
-    {
-      id: 4,
-      text: "Câu hỏi 4 là gì?",
-      options: [
-        { id: "A", text: "Đáp án A" },
-        { id: "B", text: "Đáp án B" },
-        { id: "C", text: "Đáp án C" },
-        { id: "D", text: "Đáp án D" },
-      ],
-      selectedAnswer: null,
-    },
-    {
-      id: 5,
-      text: "Câu hỏi 5 là gì?",
-      options: [
-        { id: "A", text: "Đáp án A" },
-        { id: "B", text: "Đáp án B" },
-        { id: "C", text: "Đáp án C" },
-        { id: "D", text: "Đáp án D" },
-      ],
-      selectedAnswer: null,
-    },
-    {
-      id: 6,
-      text: "Câu hỏi 6 là gì?",
-      options: [
-        { id: "A", text: "Đáp án A" },
-        { id: "B", text: "Đáp án B" },
-        { id: "C", text: "Đáp án C" },
-        { id: "D", text: "Đáp án D" },
-      ],
-      selectedAnswer: null,
-    },
-  ]);
+  useEffect(() => {
+    if (examDetail && examDetail.exam_questions && Array.isArray(examDetail.exam_questions)) {
+      const mappedQuestions = examDetail.exam_questions.map((q) => {
+        if (!q.question || !q.question.content || !q.question.answers) {
+          console.warn(`Câu hỏi ID ${q.id} không có dữ liệu hợp lệ:`, q);
+          return null;
+        }
+        console.log(`Dữ liệu câu hỏi ID ${q.id}:`, q.question);
+        const options = q.question.answers.map((ans) => {
+          console.log(`Đáp án của câu hỏi ID ${q.id}:`, ans);
+          return {
+            id: ans.id.toString(),
+            text: ans.content,
+          };
+        });
+        return {
+          id: q.id,
+          text: q.question.content,
+          options: options,
+          selectedAnswer: null,
+        };
+      }).filter(q => q !== null);
+      setQuestions(mappedQuestions);
+      console.log("Danh sách câu hỏi:", mappedQuestions);
+    } else {
+      console.warn("Không có exam_questions trong examDetail:", examDetail);
+    }
+  }, [examDetail]);
 
-  // -------------------------
-  // Đếm ngược thời gian
-  // -------------------------
+  if (!examDetail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600">Không thể tải chi tiết đề thi. Vui lòng thử lại.</p>
+      </div>
+    );
+  }
+
   useEffect(() => {
     let timer;
     if (examState === "ongoing") {
@@ -109,79 +72,53 @@ export default function ExamPage() {
     return () => clearInterval(timer);
   }, [examState]);
 
-  // -------------------------
-  // Xử lý phát hiện chuyển tab và chặn đóng tab
-  // -------------------------
   useEffect(() => {
     if (examState !== "ongoing") return;
 
-    // Xử lý khi người dùng chuyển tab
     const handleVisibilityChange = () => {
       if (document.hidden && examState === "ongoing") {
-        // Tăng số lần chuyển tab
-        setTabSwitchCount(prev => {
+        setTabSwitchCount((prev) => {
           const newCount = prev + 1;
-          
           if (newCount === 1) {
-            // Cảnh báo lần đầu
             setWarningMessage("Bạn đã chuyển khỏi tab thi lần 1. Lần tiếp theo bạn sẽ bị buộc nộp bài!");
             setShowWarning(true);
           } else if (newCount >= 2) {
-            // Buộc nộp bài lần thứ 2
             handleSubmitExam();
           }
-          
           return newCount;
         });
       }
     };
 
-    // Xử lý chặn đóng tab
     const handleBeforeUnload = (e) => {
       if (examState === "ongoing") {
-        // Hiển thị cảnh báo và ngăn người dùng đóng tab
         e.preventDefault();
         e.returnValue = "Bạn không thể đóng tab trong khi làm bài thi. Vui lòng nộp bài trước khi thoát.";
-        
-        // Hiển thị cảnh báo trong ứng dụng
         setWarningMessage("Bạn không thể đóng tab trong khi làm bài thi. Vui lòng nộp bài trước khi thoát.");
         setShowWarning(true);
-        
-        // Phải trả về message để hiện hộp thoại xác nhận mặc định của trình duyệt
         return e.returnValue;
       }
     };
 
-    // Đăng ký các event listeners
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // Cleanup
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [examState, tabSwitchCount]);
 
-  // -------------------------
-  // Xử lý đóng cảnh báo
-  // -------------------------
   const handleCloseWarning = () => {
     setShowWarning(false);
   };
 
-  // -------------------------
-  // Định dạng thời gian mm:ss
-  // -------------------------
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // -------------------------
-  // Chọn đáp án cho câu hỏi
-  // -------------------------
   const handleSelectAnswer = (questionId, answerId) => {
     if (examState !== "ongoing") return;
     setQuestions((prev) =>
@@ -191,35 +128,37 @@ export default function ExamPage() {
     );
   };
 
-  // -------------------------
-  // Mở pop-up xác nhận nộp bài
-  // -------------------------
   const handleOpenConfirmSubmit = () => {
     setShowConfirmSubmit(true);
   };
 
-  // -------------------------
-  // Đóng pop-up xác nhận nộp bài
-  // -------------------------
   const handleCloseConfirmSubmit = () => {
     setShowConfirmSubmit(false);
   };
 
-  // -------------------------
-  // Thực sự nộp bài
-  // -------------------------
-  const handleSubmitExam = () => {
+  const handleSubmitExam = async () => {
     setExamState("submitted");
-    
-    // Log thông tin về số lần chuyển tab
-    console.log("Thống kê hành vi:", {
-      tabSwitchCount
-    });
+    const submissionData = {
+      examId: examDetail.id,
+      list_question: questions.map((q) => ({
+        questionId: q.id,
+        list_answer: q.selectedAnswer ? [parseInt(q.selectedAnswer)] : [],
+      })),
+      is_selected: true,
+    };
+
+    try {
+      const response = await axiosInstance.post("/exam", submissionData);
+      console.log("Nộp bài thành công:", response.data);
+    } catch (err) {
+      console.error("Lỗi khi nộp bài:", err);
+      setWarningMessage("Không thể nộp bài. Vui lòng thử lại sau.");
+      setShowWarning(true);
+    }
+
+    console.log("Thống kê hành vi:", { tabSwitchCount });
   };
 
-  // -------------------------
-  // Cuộn đến câu hỏi tương ứng (khi đang làm)
-  // -------------------------
   const scrollToQuestion = (questionId) => {
     const element = document.getElementById(`question-${questionId}`);
     if (element) {
@@ -227,9 +166,6 @@ export default function ExamPage() {
     }
   };
 
-  // -------------------------
-  // Tính điểm
-  // -------------------------
   const calculateScore = () => {
     const correct = { 1: "B", 2: "D", 3: "A", 4: "A", 5: "C", 6: "D" };
     let count = 0;
@@ -241,18 +177,11 @@ export default function ExamPage() {
     return count;
   };
 
-  // -------------------------
-  // Giao diện khi đang làm bài
-  // -------------------------
   const renderOngoingExam = () => {
     return (
       <div className="min-h-screen bg-gray-100 relative">
-        {/* HEADER FIXED */}
         <div className="fixed top-0 left-0 right-0 bg-white shadow p-4 flex justify-between items-center z-50">
-          <button className="bg-red-500 text-white px-4 py-2 rounded">
-            THOÁT
-          </button>
-          <div className="font-bold text-xl">Sinh Viên: Aliliiii</div>
+
           <div className="flex items-center space-x-4">
             <div className="text-red-600 font-bold text-lg">
               {formatTime(timeRemaining)}
@@ -266,49 +195,55 @@ export default function ExamPage() {
           </div>
         </div>
 
-        {/* Nội dung bài thi */}
         <div className="max-w-4xl mx-auto px-4 py-6 mt-20 mr-80">
-          {questions.map((q) => (
-            <div
-              key={q.id}
-              id={`question-${q.id}`}
-              className="bg-white p-4 rounded shadow mb-4"
-            >
-              <div className="font-bold mb-2">
-                {q.id}. {q.text}
+          {questions.length === 0 ? (
+            <p className="text-gray-600 text-center">Không có câu hỏi nào để hiển thị.</p>
+          ) : (
+            questions.map((q) => (
+              <div
+                key={q.id}
+                id={`question-${q.id}`}
+                className="bg-white p-4 rounded shadow mb-4"
+              >
+                <div className="font-bold mb-2">
+                  {q.id}. {q.text}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {Array.isArray(q.options) && q.options.length > 0 ? (
+                    q.options.map((opt) => {
+                      const selected = q.selectedAnswer === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => handleSelectAnswer(q.id, opt.id)}
+                          className={`flex items-center p-3 rounded border transition ${
+                            selected
+                              ? "border-blue-500 bg-blue-100"
+                              : "border-gray-300 hover:bg-gray-100"
+                          }`}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 font-bold ${
+                              selected
+                                ? "bg-blue-500 text-white"
+                                : "bg-white border-2 border-gray-300"
+                            }`}
+                          >
+                            {opt.id || "N/A"}
+                          </div>
+                          <span>{opt.text || "Không có nội dung"}</span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="text-red-600">Không có đáp án cho câu hỏi này.</p>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {q.options.map((opt) => {
-                  const selected = q.selectedAnswer === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleSelectAnswer(q.id, opt.id)}
-                      className={`flex items-center p-3 rounded border transition ${
-                        selected
-                          ? "border-blue-500 bg-blue-100"
-                          : "border-gray-300 hover:bg-gray-100"
-                      }`}
-                    >
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 font-bold ${
-                          selected
-                            ? "bg-blue-500 text-white"
-                            : "bg-white border-2 border-gray-300"
-                        }`}
-                      >
-                        {opt.id}
-                      </div>
-                      <span>{opt.text}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
-        {/* Cột chọn câu hỏi cố định bên phải */}
         <div className="fixed top-20 right-5 w-72 bg-white shadow rounded-lg p-4 max-h-[calc(100vh-4rem)] overflow-auto">
           <div className="text-center font-bold mb-4">Chọn Câu Hỏi</div>
           <div className="flex flex-col gap-2">
@@ -328,10 +263,8 @@ export default function ExamPage() {
           </div>
         </div>
 
-        {/* Pop-up xác nhận nộp bài */}
         {showConfirmSubmit && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm backdrop-filter
-           transition-all ease-in-out duration-300  bg-opacity-50 z-50">
+          <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm backdrop-filter transition-all ease-in-out duration-300 bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="text-blue-500 text-5xl">ℹ</div>
@@ -339,8 +272,7 @@ export default function ExamPage() {
                   Bạn có chắc chắn muốn nộp bài ?
                 </h2>
                 <p className="text-gray-600">
-                  Khi xác nhận nộp bài, bạn sẽ không thể sửa lại bài thi của
-                  mình. Chúc bạn may mắn!
+                  Khi xác nhận nộp bài, bạn sẽ không thể sửa lại bài thi của mình. Chúc bạn may mắn!
                 </p>
                 <div className="flex space-x-4 mt-4">
                   <button
@@ -364,19 +296,15 @@ export default function ExamPage() {
           </div>
         )}
 
-        {/* Cảnh báo chuyển/đóng tab */}
         {showWarning && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm backdrop-filter
-           transition-all ease-in-out duration-300 bg-opacity-50 z-50">
+          <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm backdrop-filter transition-all ease-in-out duration-300 bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="text-yellow-500 text-5xl">⚠️</div>
                 <h2 className="text-xl font-bold text-red-600">
                   Cảnh Báo!
                 </h2>
-                <p className="text-gray-700">
-                  {warningMessage}
-                </p>
+                <p className="text-gray-700">{warningMessage}</p>
                 <div className="flex space-x-4 mt-4">
                   <button
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -393,27 +321,21 @@ export default function ExamPage() {
     );
   };
 
-  // -------------------------
-  // Giao diện khi đã nộp bài
-  // -------------------------
   const renderSubmittedExam = () => {
     const totalQuestions = questions.length;
     const correctAnswers = calculateScore();
     const answeredCount = questions.filter((q) => q.selectedAnswer !== null).length;
     const wrongAnswers = answeredCount - correctAnswers;
     const skipped = totalQuestions - answeredCount;
-    const totalTime = 600; // Tổng thời gian làm bài (giây)
+    const totalTime = examDetail ? examDetail.duration_minutes * 60 : 600;
     const timeUsed = totalTime - timeRemaining;
     const timeUsedFormatted = formatTime(timeUsed);
     const accuracy = (correctAnswers / totalQuestions) * 100;
 
-    // Định nghĩa đáp án đúng cho từng câu hỏi
     const correctMapping = { 1: "B", 2: "D", 3: "A", 4: "A", 5: "C", 6: "D" };
 
-    // Layout: hiển thị kết quả chung + danh sách câu hỏi bên dưới
     return (
       <div className="min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 p-6">
-        {/* Kết quả chung */}
         <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-center mb-8">
           <h2 className="text-4xl font-extrabold text-gray-800 mb-8">
             Kết quả làm bài
@@ -445,10 +367,10 @@ export default function ExamPage() {
             </div>
           </div>
 
-          {/* Thêm thông tin về số lần chuyển tab */}
           <div className="border-t pt-4 mt-4">
             <p className="text-md text-gray-700 mb-2">
-              <span className="font-medium">Số lần chuyển tab:</span> <span className="text-red-600">{tabSwitchCount}</span>
+              <span className="font-medium">Số lần chuyển tab:</span>{" "}
+              <span className="text-red-600">{tabSwitchCount}</span>
             </p>
           </div>
 
@@ -460,28 +382,22 @@ export default function ExamPage() {
           </button>
         </div>
 
-        {/* Danh sách câu hỏi - dạng lưới nhiều cột */}
         <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow-2xl">
           <h3 className="text-2xl font-bold mb-4 text-gray-700">
             Danh sách câu hỏi
           </h3>
 
-          {/* Chia làm nhiều cột (có thể tùy chỉnh grid-cols-2,3,4) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {questions.map((q) => {
-              // Kiểm tra xem người dùng có chọn đáp án không
               const userAnswer = q.selectedAnswer;
               const isAnswered = userAnswer !== null;
-              // Đáp án đúng
               const correctAns = correctMapping[q.id];
-              // Xác định đúng/sai
               const isCorrect = userAnswer === correctAns;
 
               let summaryText = `Câu ${q.id}: `;
               if (!isAnswered) {
                 summaryText += "chưa trả lời";
               } else {
-                // Vd: "Câu 1: A (✓)" hoặc "Câu 1: C (✗)"
                 summaryText += userAnswer;
                 summaryText += isCorrect ? " (✓)" : " (✗)";
               }
