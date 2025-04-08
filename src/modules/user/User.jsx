@@ -27,10 +27,9 @@ const User = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isBoy, setIsBoy] = useState(false);
 
-  const [users, setUsers] = useState(defaultUsers);
+  const [users, setUsers] = useState([]);
   const [expandedIndex, setExpandedIndex] = useState(null);
   const [activeUser, setActiveUser] = useState(true);
-
   //Test
   const [listUser, setListUser]=useState([]);
   useEffect(()=>{
@@ -263,7 +262,7 @@ const User = () => {
         isOpen={isOpenModal}
         onClose={closeModal}
         className="bg-white rounded-xl p-6 min-w-200 min-h-120 overflow-auto max-h-140 mx-auto z-40 mt-20 border-2 border-black"
-        title="THem nguoi dung"
+        title="Them nguoi dung"
       >
         {modalContent()}
       </CustomModal>
@@ -284,8 +283,6 @@ const User = () => {
           <select
             className="w-40 border-2 p-2 rounded-xl bg-blue-50 text-blue-800"
             name="sl-monhoc"
-            // value={}
-            // onChange={}
           >
             {roles.map((role, index) => (
               <option key={index} value={index}>
