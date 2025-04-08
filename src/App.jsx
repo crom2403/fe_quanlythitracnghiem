@@ -8,7 +8,7 @@ import Login from './modules/login/Login';
 import Group from './modules/group/Group';
 import GroupDetail from './modules/groupdetail/GroupDetail';
 import ExamPaper from './modules/exampaper/ExamPaper';
-import Question from './modules/question/Question';
+import Question from './modules/question/question123';
 import CourseManagement from './modules/courseManagement/CourseManagement';
 import ExamManagement from './modules/exam/ExamManagement';
 
