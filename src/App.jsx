@@ -8,7 +8,7 @@ import Login from './modules/login/Login';
 import Group from './modules/group/Group';
 import GroupDetail from './modules/groupdetail/GroupDetail';
 import ExamPaper from './modules/exampaper/ExamPaper';
-import Question from './modules/question/question123';
+import Question123 from './modules/question123/question123';
 import CourseManagement from './modules/courseManagement/CourseManagement';
 import ExamManagement from './modules/exam/ExamManagement';
 
@@ -29,12 +29,9 @@ function App() {
               path={path.EXAMPAPER.substring(1)}
               element={<ExamPaper />}
             />
-            <Route
-              path={path.QUESTION.substring(1)}
-              element={<Question />}
-            />
+
             <Route path={path.MODULE.substring(1)} element={<Module />} />
-            <Route path={path.QUESTION.substring(1)} element={<Home />} />
+            <Route path={path.QUESTION123.substring(1)} element={<Question123 />} />
             <Route path={path.SUBJECT.substring(1)} element={<Home />} />
             <Route path={path.COURSEMANAGEMENT.substring(1)} element={<CourseManagement />} />
 
