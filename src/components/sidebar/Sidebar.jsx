@@ -108,7 +108,7 @@ const Sitebar = () => {
         </div>
       </div>
     );
-  } else if (role === 'giangvien') {
+  } else if (role === 'teacher') {
     return (
       <div>
         <h1>GIẢNG VIÊN SIDEBAR</h1>
