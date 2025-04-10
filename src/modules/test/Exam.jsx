@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useExamStore from "../store/examStore";
 import axiosInstance from "../../axiosConfig";
@@ -17,29 +17,80 @@ export default function ExamPage() {
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
   const [questions, setQuestions] = useState([]);
+  const [reviewSettings, setReviewSettings] = useState({
+    allow_review: examDetail.allow_review,
+    allow_review_point: examDetail.allow_review_point,
+  });
+
+  const prevExamDetailRef = useRef(null);
+
+  const shuffleArray = (array) => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  };
 
   useEffect(() => {
     if (examDetail && examDetail.exam_questions && Array.isArray(examDetail.exam_questions)) {
-      const mappedQuestions = examDetail.exam_questions.map((q) => {
+      const examDetailString = JSON.stringify(examDetail);
+      if (examDetailString === JSON.stringify(prevExamDetailRef.current)) {
+        return;
+      }
+      prevExamDetailRef.current = examDetail;
+
+      let mappedQuestions = examDetail.exam_questions.map((q) => {
         if (!q.question || !q.question.content || !q.question.answers) {
-          console.warn(`Câu hỏi ID ${q.id} không có dữ liệu hợp lệ:`, q);
+          console.warn(`Câu hỏi ID ${q.order_index} không có dữ liệu hợp lệ:`, q);
           return null;
         }
-        console.log(`Dữ liệu câu hỏi ID ${q.id}:`, q.question);
-        const options = q.question.answers.map((ans) => {
-          console.log(`Đáp án của câu hỏi ID ${q.id}:`, ans);
+
+        let options = q.question.answers.map((ans, index) => ({
+          id: String.fromCharCode(65 + index),
+          text: ans.content,
+        }));
+
+        const correctAnswer = q.question.answers.find((ans) => ans.is_correct);
+        const correctAnswerId = correctAnswer
+          ? String.fromCharCode(65 + q.question.answers.indexOf(correctAnswer))
+          : null;
+
+        if (examDetail.is_shuffled_answer) {
+          const originalOptions = options.map((opt, index) => ({
+            ...opt,
+            originalIndex: index,
+          }));
+          options = shuffleArray(originalOptions);
+
+          const correctOption = options.find(
+            (opt) => opt.originalIndex === q.question.answers.indexOf(correctAnswer)
+          );
+          const newCorrectAnswerId = correctOption ? correctOption.id : null;
+
           return {
-            id: ans.id.toString(),
-            text: ans.content,
+            id: q.order_index,
+            text: q.question.content,
+            options: options.map(({ originalIndex, ...rest }) => rest),
+            selectedAnswer: null,
+            correctAnswer: newCorrectAnswerId,
           };
-        });
+        }
+
         return {
-          id: q.id,
+          id: q.order_index,
           text: q.question.content,
-          options: options,
+          options,
           selectedAnswer: null,
+          correctAnswer: correctAnswerId,
         };
-      }).filter(q => q !== null);
+      }).filter((q) => q !== null);
+
+      if (examDetail.is_shuffled_question) {
+        mappedQuestions = shuffleArray(mappedQuestions);
+      }
+
       setQuestions(mappedQuestions);
       console.log("Danh sách câu hỏi:", mappedQuestions);
     } else {
@@ -62,7 +113,7 @@ export default function ExamPage() {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            handleSubmitExam();
+            setShowConfirmSubmit(true);
             return 0;
           }
           return prev - 1;
@@ -137,27 +188,43 @@ export default function ExamPage() {
   };
 
   const handleSubmitExam = async () => {
-    setExamState("submitted");
-    const submissionData = {
-      examId: examDetail.id,
-      list_question: questions.map((q) => ({
-        questionId: q.id,
-        list_answer: q.selectedAnswer ? [parseInt(q.selectedAnswer)] : [],
-      })),
-      is_selected: true,
-    };
+  setExamState("submitted");
 
-    try {
-      const response = await axiosInstance.post("/exam", submissionData);
-      console.log("Nộp bài thành công:", response.data);
-    } catch (err) {
-      console.error("Lỗi khi nộp bài:", err);
-      setWarningMessage("Không thể nộp bài. Vui lòng thử lại sau.");
+  const submissionData = {
+    exam_id: examDetail.id, 
+    list_question: questions.map((q) => ({
+      question_id: q.id, 
+      list_answer: q.selectedAnswer
+        ? [
+            {
+              answer_id: q.selectedAnswer, 
+              is_selected: true,
+            },
+          ]
+        : [],
+    })),
+  };
+
+  try {
+    const response = await axiosInstance.post("/exam-attempt", submissionData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("Nộp bài thành công:", response.data);
+
+    if (response.data.success) {
+      setWarningMessage(response.data.message || "Nộp bài thi thành công");
       setShowWarning(true);
     }
+  } catch (err) {
+    console.error("Lỗi khi nộp bài:", err);
+    setWarningMessage("Không thể nộp bài. Vui lòng thử lại sau.");
+    setShowWarning(true);
+  }
 
-    console.log("Thống kê hành vi:", { tabSwitchCount });
-  };
+  console.log("Thống kê hành vi:", { tabSwitchCount });
+};
 
   const scrollToQuestion = (questionId) => {
     const element = document.getElementById(`question-${questionId}`);
@@ -167,10 +234,9 @@ export default function ExamPage() {
   };
 
   const calculateScore = () => {
-    const correct = { 1: "B", 2: "D", 3: "A", 4: "A", 5: "C", 6: "D" };
     let count = 0;
     questions.forEach((q) => {
-      if (correct[q.id] && q.selectedAnswer === correct[q.id]) {
+      if (q.selectedAnswer && q.selectedAnswer === q.correctAnswer) {
         count++;
       }
     });
@@ -181,7 +247,6 @@ export default function ExamPage() {
     return (
       <div className="min-h-screen bg-gray-100 relative">
         <div className="fixed top-0 left-0 right-0 bg-white shadow p-4 flex justify-between items-center z-50">
-
           <div className="flex items-center space-x-4">
             <div className="text-red-600 font-bold text-lg">
               {formatTime(timeRemaining)}
@@ -229,7 +294,7 @@ export default function ExamPage() {
                                 : "bg-white border-2 border-gray-300"
                             }`}
                           >
-                            {opt.id || "N/A"}
+                            {opt.id}
                           </div>
                           <span>{opt.text || "Không có nội dung"}</span>
                         </button>
@@ -330,89 +395,98 @@ export default function ExamPage() {
     const totalTime = examDetail ? examDetail.duration_minutes * 60 : 600;
     const timeUsed = totalTime - timeRemaining;
     const timeUsedFormatted = formatTime(timeUsed);
-    const accuracy = (correctAnswers / totalQuestions) * 100;
+    const scoreOutOf10 = (correctAnswers / totalQuestions) * 10;
 
-    const correctMapping = { 1: "B", 2: "D", 3: "A", 4: "A", 5: "C", 6: "D" };
+    if (!reviewSettings.allow_review && !reviewSettings.allow_review_point) {
+      return null;
+    }
 
     return (
       <div className="min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 p-6">
-        <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-center mb-8">
-          <h2 className="text-4xl font-extrabold text-gray-800 mb-8">
-            Kết quả làm bài
-          </h2>
-          <div className="mb-6 flex flex-col items-center space-y-2">
-            <div className="text-5xl font-bold text-blue-600">
-              {correctAnswers}/{totalQuestions}
+        {reviewSettings.allow_review_point && (
+          <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-center mb-8">
+            <h2 className="text-4xl font-extrabold text-gray-800 mb-8">
+              Kết quả làm bài
+            </h2>
+            <div className="mb-6 flex flex-col items-center space-y-2">
+              <div className="text-5xl font-bold text-blue-600">
+                {scoreOutOf10.toFixed(2)}/10
+              </div>
+              <p className="text-lg text-gray-600">
+                Số câu đúng: {correctAnswers}/{totalQuestions}
+              </p>
+              <p className="text-lg text-gray-600">
+                Thời gian hoàn thành:{" "}
+                <span className="font-semibold text-blue-600">
+                  {timeUsedFormatted}
+                </span>
+              </p>
             </div>
-            <p className="text-lg text-gray-600">
-              Điểm số: {accuracy.toFixed(2)}%
-            </p>
-            <p className="text-lg text-gray-600">
-              Thời gian hoàn thành:{" "}
-              <span className="font-semibold text-blue-600">
-                {timeUsedFormatted}
-              </span>
-            </p>
-          </div>
 
-          <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-6 space-y-3 sm:space-y-0 mb-6 text-lg">
-            <div>
-              Đúng: <span className="font-semibold text-green-600">{correctAnswers}</span>
+            <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-6 space-y-3 sm:space-y-0 mb-6 text-lg">
+              <div>
+                Đúng: <span className="font-semibold text-green-600">{correctAnswers}</span>
+              </div>
+              <div>
+                Sai: <span className="font-semibold text-red-600">{wrongAnswers}</span>
+              </div>
+              <div>
+                Bỏ qua: <span className="font-semibold text-gray-500">{skipped}</span>
+              </div>
             </div>
-            <div>
-              Sai: <span className="font-semibold text-red-600">{wrongAnswers}</span>
-            </div>
-            <div>
-              Bỏ qua: <span className="font-semibold text-gray-500">{skipped}</span>
+
+            <div className="border-t pt-4 mt-4">
+              <p className="text-md text-gray-700 mb-2">
+                <span className="font-medium">Số lần chuyển tab:</span>{" "}
+                <span className="text-red-600">{tabSwitchCount}</span>
+              </p>
             </div>
           </div>
+        )}
 
-          <div className="border-t pt-4 mt-4">
-            <p className="text-md text-gray-700 mb-2">
-              <span className="font-medium">Số lần chuyển tab:</span>{" "}
-              <span className="text-red-600">{tabSwitchCount}</span>
-            </p>
+
+
+        {reviewSettings.allow_review && (
+          <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow-2xl">
+            <h3 className="text-2xl font-bold mb-4 text-gray-700">
+              Danh sách câu hỏi
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {questions.map((q) => {
+                const userAnswer = q.selectedAnswer;
+                const isAnswered = userAnswer !== null;
+                const correctAns = q.correctAnswer;
+                const isCorrect = userAnswer === correctAns;
+
+                let summaryText = `Câu ${q.id}: `;
+                if (!isAnswered) {
+                  summaryText += "chưa trả lời";
+                } else {
+                  summaryText += userAnswer;
+                  summaryText += isCorrect ? " (✓)" : " (✗)";
+                }
+
+                return (
+                  <div
+                    key={q.id}
+                    className="border rounded-lg p-4 text-sm text-gray-700"
+                  >
+                    <div className="font-semibold mb-1">{summaryText}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-
-          <button
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg text-lg font-bold hover:bg-gray-300 transition duration-300 shadow-lg mt-6"
-            onClick={() => navigate("/dashboard")}
-          >
-            Quay về trang đề thi
-          </button>
-        </div>
-
-        <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow-2xl">
-          <h3 className="text-2xl font-bold mb-4 text-gray-700">
-            Danh sách câu hỏi
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {questions.map((q) => {
-              const userAnswer = q.selectedAnswer;
-              const isAnswered = userAnswer !== null;
-              const correctAns = correctMapping[q.id];
-              const isCorrect = userAnswer === correctAns;
-
-              let summaryText = `Câu ${q.id}: `;
-              if (!isAnswered) {
-                summaryText += "chưa trả lời";
-              } else {
-                summaryText += userAnswer;
-                summaryText += isCorrect ? " (✓)" : " (✗)";
-              }
-
-              return (
-                <div
-                  key={q.id}
-                  className="border rounded-lg p-4 text-sm text-gray-700"
-                >
-                  <div className="font-semibold mb-1">{summaryText}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        )}
+        <div className="max-w-3xl mx-auto mt-8 text-center">
+        <button
+              className=" px-6 py-3 bg-gray-200 text-gray-700 rounded-lg text-lg font-bold hover:bg-gray-300 transition duration-300 shadow-lg mt-6"
+              onClick={() => navigate("/dashboard")}
+            >
+              Quay về trang đề thi
+            </button>
+            </div>
       </div>
     );
   };

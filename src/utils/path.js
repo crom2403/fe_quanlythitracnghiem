@@ -15,6 +15,9 @@ const path = {
   GROUPDETAIL:'/dashboard/group/detail',
   EXAMPAPER:'/dashboard/group/detail/exampaper',
   QUESTION: '/dashboard/question',
+  Question123: '/dashboard/teacherteacherquestion',
+  EXAMMANAGEMENT: '/dashboard/exammanagement',
+  COURSEMANAGEMENT: '/dashboard/coursemanagement',
   FINISHEDTEST: '/dashboard/finishedtest',
 };
 
