@@ -7,19 +7,20 @@ import {
   CheckCircleIcon,
   BellIcon,
 } from '@heroicons/react/outline';
-import {GiNotebook} from 'react-icons/gi';
+import { GiNotebook } from 'react-icons/gi';
 import { Link, useNavigate } from 'react-router-dom';
 import path from '../../utils/path';
-import { useState } from 'react';
-import useUserStore from '../../modules/user/useUserStore';
+import { useState, useEffect } from 'react';
 
 const Sitebar = () => {
   const loggedIn = sessionStorage.getItem('user-info');
-  const role = JSON.parse(sessionStorage.getItem('user-info')).role.name;
+  const role = loggedIn ? JSON.parse(sessionStorage.getItem('user-info')).role.name : null;
   const navigate = useNavigate();
-  const [activeLink, setActiveLink] = useState(null);
+  const [activeLink, setActiveLink] = useState(sessionStorage.getItem('activeLink') || null);
+
   const handleLinkClick = (link) => {
     setActiveLink(link);
+    sessionStorage.setItem('activeLink', link); // Lưu link được chọn vào sessionStorage
   };
 
   const getLinkClass = (link) => {
@@ -27,9 +28,12 @@ const Sitebar = () => {
       ? 'bg-red-700 text-white'
       : 'text-black hover:bg-red-700 hover:text-white';
   };
-  if (!loggedIn) {
-    navigate('/login')
-  }
+
+  useEffect(() => {
+    if (!loggedIn) {
+      navigate('/login');
+    }
+  }, [loggedIn, navigate]);
 
   if (role === 'admin') {
     return (
@@ -51,58 +55,55 @@ const Sitebar = () => {
             onClick={() => handleLinkClick(path.GROUP)}
             className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.GROUP)}`}
           >
-            <GiNotebook className="h-6 w-6 hover:text-white text-black mr-2" />
+            <GiNotebook className={`h-6 w-6 mr-2 ${activeLink === path.GROUP ? 'text-white' : 'text-black hover:text-white'}`} />
             Nhóm học phần
           </Link>
           <Link
             to={path.QUESTION}
             onClick={() => handleLinkClick(path.QUESTION)}
-            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.QUESTION)}`}
           >
-            {/* lớp transform cho phép các hiệu ứng biến đổi như scale, rotate, translate,...*/}
-            {/* transition-all áp dụng hiệu ứng chuyển tiếp cho tất cả các thuộc tính có thể thay đổi, tạo hiệu ứng mượt mà */}
-            <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            <QuestionMarkCircleIcon className={`h-6 w-6 mr-2 ${activeLink === path.QUESTION ? 'text-white' : 'text-black hover:text-white'}`} />
             Câu hỏi
           </Link>
           <Link
             to={path.USER}
             onClick={() => handleLinkClick(path.USER)}
-            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.USER)}`}
           >
-            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            <UsersIcon className={`h-6 w-6 mr-2 ${activeLink === path.USER ? 'text-white' : 'text-black hover:text-white'}`} />
             Người dùng
           </Link>
-          
           <Link
             to={path.SUBJECT}
             onClick={() => handleLinkClick(path.SUBJECT)}
-            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.SUBJECT)}`}
           >
-            <BookOpenIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            <BookOpenIcon className={`h-6 w-6 mr-2 ${activeLink === path.SUBJECT ? 'text-white' : 'text-black hover:text-white'}`} />
             Môn học
           </Link>
           <Link
-           to={path.ASSIGNMENT}
-           onClick={() => handleLinkClick(path.ASSIGNMENT)}
-            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+            to={path.ASSIGNMENT}
+            onClick={() => handleLinkClick(path.ASSIGNMENT)}
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.ASSIGNMENT)}`}
           >
-            <ClipboardIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            <ClipboardIcon className={`h-6 w-6 mr-2 ${activeLink === path.ASSIGNMENT ? 'text-white' : 'text-black hover:text-white'}`} />
             Phân công
           </Link>
           <Link
             to={path.EXAMPAPER}
             onClick={() => handleLinkClick(path.EXAMPAPER)}
-            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.EXAMPAPER)}`}
           >
-            <CheckCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            <CheckCircleIcon className={`h-6 w-6 mr-2 ${activeLink === path.EXAMPAPER ? 'text-white' : 'text-black hover:text-white'}`} />
             Đã kiểm tra
           </Link>
           <Link
             to={path.NOTIFICATION}
             onClick={() => handleLinkClick(path.NOTIFICATION)}
-            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.NOTIFICATION)}`}
           >
-            <BellIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            <BellIcon className={`h-6 w-6 mr-2 ${activeLink === path.NOTIFICATION ? 'text-white' : 'text-black hover:text-white'}`} />
             Thông báo
           </Link>
         </div>
@@ -132,8 +133,8 @@ const Sitebar = () => {
             Nhóm học phần
           </Link>
           <Link
-            to={path.QUESTION}
-            onClick={() => handleLinkClick(path.QUESTION)}
+            to={path.Question123}
+            onClick={() => handleLinkClick(path.Question123)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
@@ -143,7 +144,7 @@ const Sitebar = () => {
             href="#"
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
-            <UserIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Thông tin cá nhân
           </a>
           

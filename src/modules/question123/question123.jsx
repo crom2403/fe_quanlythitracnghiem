@@ -5,144 +5,227 @@ import {
   Trash2,
   Plus,
   Upload,
-  Filter,
   ChevronDown,
 } from 'lucide-react';
-
-// Dữ liệu mẫu
-const initialQuestions = [
-  {
-    id: 1,
-    question:
-      'Ngôn ngữ lập trình nào được sử dụng để phát triển ứng dụng React?',
-    options: ['Java', 'C++', 'JavaScript', 'Python'],
-    correctAnswer: 'JavaScript',
-    subject: 'Lập trình',
-    chapter: 'Ngôn ngữ lập trình',
-    difficulty: 'Dễ',
-  },
-  {
-    id: 2,
-    question: 'HTML là viết tắt của?',
-    options: [
-      'Hyper Text Markup Language',
-      'High Tech Machine Learning',
-      'Hyper Transfer Mode Language',
-      'Home Tool Markup Language',
-    ],
-    correctAnswer: 'Hyper Text Markup Language',
-    subject: 'Web',
-    chapter: 'Cơ bản',
-    difficulty: 'Dễ',
-  },
-  {
-    id: 3,
-    question: 'CSS được sử dụng để làm gì?',
-    options: [
-      'Tạo cấu trúc trang web',
-      'Tạo kiểu cho trang web',
-      'Xử lý dữ liệu',
-      'Lưu trữ dữ liệu',
-    ],
-    correctAnswer: 'Tạo kiểu cho trang web',
-    subject: 'Web',
-    chapter: 'CSS',
-    difficulty: 'Trung bình',
-  },
-];
-
-// Danh sách các môn học, chương, độ khó
-const subjects = [
-  'Tất cả',
-  'Lập trình',
-  'Web',
-  'Cơ sở dữ liệu',
-  'Mạng máy tính',
-];
-const chapters = [
-  'Tất cả',
-  'Cơ bản',
-  'Ngôn ngữ lập trình',
-  'CSS',
-  'JavaScript',
-  'React',
-  'SQL',
-];
-const difficultyLevels = ['Tất cả', 'Dễ', 'Trung bình', 'Khó'];
+import axios from "../../axiosConfig";
+import mammoth from 'mammoth';
 
 const QuestionManagement = () => {
-  const [questions, setQuestions] = useState(initialQuestions);
+  const [questions, setQuestions] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [chapters, setChapters] = useState([]);
+  const [filteredChapters, setFilteredChapters] = useState([]);
+  const [difficultyLevels] = useState([
+    { id: 1, name: 'Dễ', value: 'easy' },
+    { id: 2, name: 'Trung bình', value: 'medium' },
+    { id: 3, name: 'Khó', value: 'hard' },
+  ]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('Tất cả');
-  const [selectedChapter, setSelectedChapter] = useState('Tất cả');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('Tất cả');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedChapter, setSelectedChapter] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('');
 
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Form state cho việc thêm/sửa câu hỏi
   const [formData, setFormData] = useState({
     question: '',
     options: ['', '', '', ''],
     correctAnswer: '',
     subject: '',
     chapter: '',
-    difficulty: 'Dễ',
+    difficulty: '',
   });
 
-  // Xử lý tìm kiếm và lọc
+  useEffect(() => {
+    const fetchData = async () => {
+      await fetchSubjects();
+      await fetchChapters(); // Đảm bảo fetchChapters hoàn thành trước
+      await fetchQuestions(); // Sau đó mới gọi fetchQuestions
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedSubject) {
+      const subject = subjects.find((s) => s.name === selectedSubject);
+      if (subject) {
+        const filtered = chapters.filter((chapter) => chapter.subject_id === subject.id);
+        setFilteredChapters(filtered);
+        setSelectedChapter('');
+      }
+    } else {
+      setFilteredChapters(chapters);
+    }
+  }, [selectedSubject, chapters]);
+
+  useEffect(() => {
+    if (formData.subject) {
+      fetchChaptersBySubject();
+    }
+  }, [formData.subject]);
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await axios.get('/subject');
+      const subjectData = response.data.items || [];
+      setSubjects(subjectData);
+      if (subjectData.length > 0 && !formData.subject) {
+        setFormData((prev) => ({
+          ...prev,
+          subject: subjectData[0].name,
+        }));
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách môn học:', error);
+      alert('Không thể tải danh sách môn học.');
+      setSubjects([]);
+    }
+  };
+
+  const fetchChapters = async () => {
+    try {
+      let allChapters = [];
+      let page = 1;
+      let totalPages = 1;
+
+      // Lặp qua tất cả các trang để lấy toàn bộ chương
+      while (page <= totalPages) {
+        const response = await axios.get(`/chapter?page=${page}&limit=10`);
+        const chapterData = response.data.items || [];
+        totalPages = response.data.totalPages || 1;
+        allChapters = [...allChapters, ...chapterData];
+        page++;
+      }
+
+      setChapters(allChapters);
+      setFilteredChapters(allChapters);
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách chương:', error);
+      alert('Không thể tải danh sách chương.');
+      setChapters([]);
+    }
+  };
+
+  const fetchChaptersBySubject = async () => {
+    if (!formData.subject) return;
+    const subject = subjects.find((s) => s.name === formData.subject);
+    if (!subject) return;
+
+    try {
+      let allChapters = [];
+      let page = 1;
+      let totalPages = 1;
+
+      while (page <= totalPages) {
+        const response = await axios.get(`/chapter?subjectId=${subject.id}&page=${page}&limit=10`);
+        const chapterData = response.data.items || [];
+        totalPages = response.data.totalPages || 1;
+        allChapters = [...allChapters, ...chapterData];
+        page++;
+      }
+
+      setFilteredChapters(allChapters);
+      if (allChapters.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          chapter: allChapters[0].name,
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          chapter: '',
+        }));
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách chương theo môn học:', error);
+      alert('Không thể tải danh sách chương theo môn học.');
+      setFilteredChapters([]);
+    }
+  };
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await axios.get('/question');
+      const questionData = response.data.items || [];
+      // Ánh xạ chapter_name từ chapter_id
+      const updatedQuestions = questionData.map((q) => {
+        const chapter = chapters.find((c) => c.id === q.chapter_id);
+        return {
+          ...q,
+          chapter_name: chapter ? chapter.name : 'Chưa xác định',
+        };
+      });
+      setQuestions(updatedQuestions);
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách câu hỏi:', error);
+      alert('Không thể tải danh sách câu hỏi.');
+      setQuestions([]);
+    }
+  };
+
+  const mapDifficultyToVietnamese = (difficulty) => {
+    const level = difficultyLevels.find((level) => level.value === difficulty);
+    return level ? level.name : difficulty;
+  };
+
+  const mapDifficultyToEnglish = (difficulty) => {
+    const level = difficultyLevels.find((level) => level.name === difficulty);
+    return level ? level.value : difficulty;
+  };
+
   const filteredQuestions = questions.filter((q) => {
-    const matchesSearch = q.question
+    const matchesSearch = q.content
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesSubject =
-      selectedSubject === 'Tất cả' || q.subject === selectedSubject;
+      !selectedSubject || q.subject_name === selectedSubject;
     const matchesChapter =
-      selectedChapter === 'Tất cả' || q.chapter === selectedChapter;
+      !selectedChapter || q.chapter_name === selectedChapter;
     const matchesDifficulty =
-      selectedDifficulty === 'Tất cả' || q.difficulty === selectedDifficulty;
+      !selectedDifficulty || q.difficulty_level === mapDifficultyToEnglish(selectedDifficulty);
 
-    return (
-      matchesSearch && matchesSubject && matchesChapter && matchesDifficulty
-    );
+    return matchesSearch && matchesSubject && matchesChapter && matchesDifficulty;
   });
 
-  // Xử lý thêm câu hỏi mới
   const handleAddQuestion = () => {
     setEditingQuestion(null);
     setFormData({
       question: '',
       options: ['', '', '', ''],
       correctAnswer: '',
-      subject: subjects[1],
-      chapter: chapters[1],
-      difficulty: 'Dễ',
+      subject: subjects[0]?.name || '',
+      chapter: filteredChapters[0]?.name || chapters[0]?.name || '',
+      difficulty: difficultyLevels[0]?.name || '',
     });
     setShowModal(true);
   };
 
-  // Xử lý sửa câu hỏi
   const handleEditQuestion = (question) => {
     setEditingQuestion(question);
     setFormData({
-      question: question.question,
-      options: [...question.options],
-      correctAnswer: question.correctAnswer,
-      subject: question.subject,
-      chapter: question.chapter,
-      difficulty: question.difficulty,
+      question: question.content,
+      options: Array.isArray(question.answers) ? question.answers.map((ans) => ans.content) : ['', '', '', ''],
+      correctAnswer: Array.isArray(question.answers) ? question.answers.find((ans) => ans.is_correct)?.content || '' : '',
+      subject: question.subject_name,
+      chapter: question.chapter_name || filteredChapters[0]?.name || chapters[0]?.name || '',
+      difficulty: mapDifficultyToVietnamese(question.difficulty_level),
     });
     setShowModal(true);
   };
 
-  // Xử lý xóa câu hỏi
-  const handleDeleteQuestion = (id) => {
+  const handleDeleteQuestion = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
-      setQuestions(questions.filter((q) => q.id !== id));
+      try {
+        await axios.delete(`/question/${id}`);
+        fetchQuestions();
+      } catch (error) {
+        console.error('Lỗi khi xóa câu hỏi:', error);
+        alert('Xóa câu hỏi thất bại.');
+      }
     }
   };
 
-  // Xử lý thay đổi form
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -151,7 +234,6 @@ const QuestionManagement = () => {
     });
   };
 
-  // Xử lý thay đổi lựa chọn
   const handleOptionChange = (index, value) => {
     const newOptions = [...formData.options];
     newOptions[index] = value;
@@ -161,8 +243,7 @@ const QuestionManagement = () => {
     });
   };
 
-  // Xử lý lưu câu hỏi
-  const handleSaveQuestion = () => {
+  const handleSaveQuestion = async () => {
     if (
       formData.question.trim() === '' ||
       formData.options.some((opt) => opt.trim() === '') ||
@@ -177,134 +258,142 @@ const QuestionManagement = () => {
       return;
     }
 
-    if (editingQuestion) {
-      // Cập nhật câu hỏi hiện có
-      setQuestions(
-        questions.map((q) =>
-          q.id === editingQuestion.id ? { ...q, ...formData } : q
-        )
-      );
-    } else {
-      // Thêm câu hỏi mới
-      const newQuestion = {
-        id:
-          questions.length > 0
-            ? Math.max(...questions.map((q) => q.id)) + 1
-            : 1,
-        ...formData,
-      };
-      setQuestions([...questions, newQuestion]);
+    const subject = subjects.find((s) => s.name === formData.subject);
+    const chapter = filteredChapters.find((c) => c.name === formData.chapter);
+    if (!subject || !chapter) {
+      alert('Vui lòng chọn môn học và chương hợp lệ.');
+      return;
     }
 
-    setShowModal(false);
+    const apiQuestion = {
+      chapter_id: chapter.id,
+      content: formData.question,
+      difficulty_level: mapDifficultyToEnglish(formData.difficulty),
+      answers: formData.options.map((option) => ({
+        content: option,
+        is_correct: option === formData.correctAnswer,
+      })),
+    };
+
+    try {
+      if (editingQuestion) {
+        await axios.put(`/question/${editingQuestion.id}`, apiQuestion);
+      } else {
+        await axios.post('/question', apiQuestion);
+      }
+      setShowModal(false);
+      fetchQuestions();
+    } catch (error) {
+      console.error('Lỗi khi lưu câu hỏi:', error);
+      alert('Lưu câu hỏi thất bại.');
+    }
   };
 
-  // Xử lý import file
   const handleWordFileImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const arrayBuffer = event.target.result;
 
-      // Sử dụng mammoth để chuyển đổi docx sang HTML
-      mammoth
-        .convertToHtml({ arrayBuffer })
-        .then((result) => {
-          const html = result.value;
+      try {
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        const html = result.value;
 
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const paragraphs = doc.querySelectorAll('p');
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const paragraphs = doc.querySelectorAll('p');
 
-          const questionsData = [];
-          let currentQuestion = null;
+        const questionsData = [];
+        let currentQuestion = null;
 
-          for (let i = 0; i < paragraphs.length; i++) {
-            const text = paragraphs[i].textContent.trim();
+        for (let i = 0; i < paragraphs.length; i++) {
+          const text = paragraphs[i].textContent.trim();
 
-            if (text.startsWith('Câu hỏi:')) {
-
-              if (currentQuestion && currentQuestion.question) {
-                questionsData.push(currentQuestion);
+          if (text.startsWith('Câu hỏi:')) {
+            if (currentQuestion && currentQuestion.question) {
+              questionsData.push(currentQuestion);
+            }
+            currentQuestion = {
+              question: text.replace('Câu hỏi:', '').trim(),
+              options: [],
+              correctAnswer: '',
+              subject: subjects[0]?.name || '',
+              chapter: chapters[0]?.name || '',
+              difficulty: difficultyLevels[0]?.name || '',
+            };
+          } else if (text.match(/^[A-D]\.\s/) && currentQuestion) {
+            const option = text.replace(/^[A-D]\.\s/, '').trim();
+            currentQuestion.options.push(option);
+          } else if (text.startsWith('Đáp án:') && currentQuestion) {
+            const answer = text.replace('Đáp án:', '').trim();
+            if (answer.match(/^[A-D]$/)) {
+              const index = answer.charCodeAt(0) - 65;
+              if (currentQuestion.options[index]) {
+                currentQuestion.correctAnswer = currentQuestion.options[index];
               }
+            }
+          } else if (text.startsWith('Môn học:') && currentQuestion) {
+            currentQuestion.subject = text.replace('Môn học:', '').trim();
+          } else if (text.startsWith('Chương:') && currentQuestion) {
+            currentQuestion.chapter = text.replace('Chương:', '').trim();
+          } else if (text.startsWith('Độ khó:') && currentQuestion) {
+            currentQuestion.difficulty = text.replace('Độ khó:', '').trim();
+          }
+        }
 
-              currentQuestion = {
-                question: text.replace('Câu hỏi:', '').trim(),
-                options: [],
-                correctAnswer: '',
-                subject: 'Lập trình', // Mặc định
-                chapter: 'Cơ bản', // Mặc định
-                difficulty: 'Dễ', // Mặc định
-              };
-            } else if (text.match(/^[A-D]\.\s/) && currentQuestion) {
+        if (currentQuestion && currentQuestion.question) {
+          questionsData.push(currentQuestion);
+        }
 
-              const option = text.replace(/^[A-D]\.\s/, '').trim();
-              currentQuestion.options.push(option);
-            } else if (text.startsWith('Đáp án:') && currentQuestion) {
+        if (questionsData.length > 0) {
+          for (const question of questionsData) {
+            const subject = subjects.find((s) => s.name === question.subject);
+            const chapter = chapters.find((c) => c.name === question.chapter && c.subject_id === subject?.id);
+            if (!subject || !chapter) {
+              console.warn(`Không tìm thấy môn học hoặc chương cho ${question.subject} - ${question.chapter}`);
+              continue;
+            }
 
-              const answer = text.replace('Đáp án:', '').trim();
+            const apiQuestion = {
+              chapter_id: chapter.id,
+              content: question.question,
+              difficulty_level: mapDifficultyToEnglish(question.difficulty),
+              answers: question.options.map((option) => ({
+                content: option,
+                is_correct: option === question.correctAnswer,
+              })),
+            };
 
-              if (answer.match(/^[A-D]$/)) {
-                const index = answer.charCodeAt(0) - 65; 
-                if (currentQuestion.options[index]) {
-                  currentQuestion.correctAnswer =
-                    currentQuestion.options[index];
-                }
-              }
-            } else if (text.startsWith('Môn học:') && currentQuestion) {
-              currentQuestion.subject = text.replace('Môn học:', '').trim();
-            } else if (text.startsWith('Chương:') && currentQuestion) {
-              currentQuestion.chapter = text.replace('Chương:', '').trim();
-            } else if (text.startsWith('Độ khó:') && currentQuestion) {
-              currentQuestion.difficulty = text.replace('Độ khó:', '').trim();
+            try {
+              await axios.post('/question', apiQuestion);
+            } catch (error) {
+              console.error('Lỗi khi nhập câu hỏi từ file:', error);
             }
           }
 
-
-          if (currentQuestion && currentQuestion.question) {
-            questionsData.push(currentQuestion);
-          }
-
-
-          if (questionsData.length > 0) {
-            const maxId =
-              questions.length > 0
-                ? Math.max(...questions.map((q) => q.id))
-                : 0;
-            const newQuestions = questionsData.map((q, index) => ({
-              ...q,
-              id: maxId + index + 1,
-            }));
-
-            setQuestions([...questions, ...newQuestions]);
-            alert(
-              `Đã nhập thành công ${newQuestions.length} câu hỏi từ file Word!`
-            );
-          } else {
-            alert(
-              'Không tìm thấy câu hỏi nào trong file. Vui lòng kiểm tra định dạng!'
-            );
-          }
-        })
-        .catch((error) => {
-          alert('Lỗi khi đọc file Word: ' + error.message);
-        });
+          fetchQuestions();
+          alert(`Đã nhập thành công ${questionsData.length} câu hỏi từ file Word!`);
+        } else {
+          alert('Không tìm thấy câu hỏi nào trong file. Vui lòng kiểm tra định dạng!');
+        }
+      } catch (error) {
+        alert('Lỗi khi đọc file Word: ' + error.message);
+      }
     };
 
     reader.readAsArrayBuffer(file);
-    e.target.value = null; 
+    e.target.value = null;
   };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">
         Quản Lý Câu Hỏi Thi Trắc Nghiệm
       </h1>
 
-      {/* Thanh công cụ */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
-        {/* Tìm kiếm */}
         <div className="relative flex-grow max-w-md">
           <input
             type="text"
@@ -319,7 +408,6 @@ const QuestionManagement = () => {
           />
         </div>
 
-        {/* Bộ lọc */}
         <div className="flex flex-wrap gap-2">
           <div className="relative">
             <select
@@ -327,9 +415,10 @@ const QuestionManagement = () => {
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
             >
+              <option value="">Tất cả môn học</option>
               {subjects.map((subject) => (
-                <option key={subject} value={subject}>
-                  {subject}
+                <option key={subject.id} value={subject.name}>
+                  {subject.name}
                 </option>
               ))}
             </select>
@@ -345,9 +434,10 @@ const QuestionManagement = () => {
               value={selectedChapter}
               onChange={(e) => setSelectedChapter(e.target.value)}
             >
-              {chapters.map((chapter) => (
-                <option key={chapter} value={chapter}>
-                  {chapter}
+              <option value="">Tất cả chương</option>
+              {filteredChapters.map((chapter) => (
+                <option key={chapter.id} value={chapter.name}>
+                  {chapter.name}
                 </option>
               ))}
             </select>
@@ -363,9 +453,10 @@ const QuestionManagement = () => {
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}
             >
+              <option value="">Tất cả độ khó</option>
               {difficultyLevels.map((level) => (
-                <option key={level} value={level}>
-                  {level}
+                <option key={level.id} value={level.name}>
+                  {level.name}
                 </option>
               ))}
             </select>
@@ -376,7 +467,6 @@ const QuestionManagement = () => {
           </div>
         </div>
 
-        {/* Nút thêm và nhập */}
         <div className="flex gap-2">
           <button
             onClick={handleAddQuestion}
@@ -389,24 +479,14 @@ const QuestionManagement = () => {
             <Upload size={18} /> Nhập File
             <input
               type="file"
-              accept=".json,.docx"
+              accept=".docx"
               className="hidden"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                if (file.name.endsWith('.json')) {
-                  handleFileImport(e);
-                } else if (file.name.endsWith('.docx')) {
-                  handleWordFileImport(e);
-                }
-              }}
+              onChange={handleWordFileImport}
             />
           </label>
         </div>
       </div>
 
-      {/* Danh sách câu hỏi */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -439,26 +519,26 @@ const QuestionManagement = () => {
                     {index + 1}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {q.question}
+                    {q.content}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {q.subject}
+                    {q.subject_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {q.chapter}
+                    {q.chapter_name || 'Chưa xác định'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium
                       ${
-                        q.difficulty === 'Dễ'
+                        mapDifficultyToVietnamese(q.difficulty_level) === 'Dễ'
                           ? 'bg-green-100 text-green-800'
-                          : q.difficulty === 'Trung bình'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
+                          : mapDifficultyToVietnamese(q.difficulty_level) === 'Trung bình'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {q.difficulty}
+                      {mapDifficultyToVietnamese(q.difficulty_level)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -491,7 +571,6 @@ const QuestionManagement = () => {
         </table>
       </div>
 
-      {/* Modal thêm/sửa câu hỏi */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
@@ -566,13 +645,12 @@ const QuestionManagement = () => {
                   value={formData.subject}
                   onChange={handleFormChange}
                 >
-                  {subjects
-                    .filter((s) => s !== 'Tất cả')
-                    .map((subject) => (
-                      <option key={subject} value={subject}>
-                        {subject}
-                      </option>
-                    ))}
+                  <option value="">Chọn môn học</option>
+                  {subjects.map((subject) => (
+                    <option key={subject.id} value={subject.name}>
+                      {subject.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -586,13 +664,12 @@ const QuestionManagement = () => {
                   value={formData.chapter}
                   onChange={handleFormChange}
                 >
-                  {chapters
-                    .filter((c) => c !== 'Tất cả')
-                    .map((chapter) => (
-                      <option key={chapter} value={chapter}>
-                        {chapter}
-                      </option>
-                    ))}
+                  <option value="">Chọn chương</option>
+                  {filteredChapters.map((chapter) => (
+                    <option key={chapter.id} value={chapter.name}>
+                      {chapter.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -606,13 +683,12 @@ const QuestionManagement = () => {
                   value={formData.difficulty}
                   onChange={handleFormChange}
                 >
-                  {difficultyLevels
-                    .filter((d) => d !== 'Tất cả')
-                    .map((level) => (
-                      <option key={level} value={level}>
-                        {level}
-                      </option>
-                    ))}
+                  <option value="">Chọn độ khó</option>
+                  {difficultyLevels.map((level) => (
+                    <option key={level.id} value={level.name}>
+                      {level.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
