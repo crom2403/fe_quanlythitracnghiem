@@ -51,8 +51,31 @@ const CourseGroups = () => {
   const fetchCourseGroups = async () => {
     setLoading(true);
     setError(null);
+
+    // Lấy thông tin người dùng từ sessionStorage
+    const userInfo = sessionStorage.getItem('user-info');
+    if (!userInfo) {
+      setError('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.');
+      setLoading(false);
+      navigate('/login'); // Chuyển hướng về trang đăng nhập
+      return;
+    }
+
+    let studentCode;
     try {
-      const studentCode = 'dh52106897';
+      const user = JSON.parse(userInfo);
+      studentCode = user.student_code; // Tùy thuộc vào key trong dữ liệu trả về từ API
+      if (!studentCode) {
+        throw new Error('Không tìm thấy mã sinh viên trong thông tin người dùng.');
+      }
+    } catch (err) {
+      setError('Lỗi khi lấy thông tin người dùng. Vui lòng đăng nhập lại.');
+      setLoading(false);
+      navigate('/login');
+      return;
+    }
+
+    try {
       const response = await axiosInstance.get(`/study-group/student/${studentCode}`);
       console.log('Dữ liệu từ API:', response.data);
 
@@ -68,10 +91,12 @@ const CourseGroups = () => {
         return group.studyGroups.map(studyGroup => ({
           id: studyGroup.id,
           name: group.name?.split(' - ')[0] || 'Không xác định',
+          name_group: studyGroup.name,
           student_count: studyGroup.student_count || 0,
           note: studyGroup.note || 'Không có ghi chú',
           ...parseGroupName(group.name || ''),
           teacher: { fullname: 'Không xác định' },
+          
         }));
       });
 
@@ -86,6 +111,7 @@ const CourseGroups = () => {
       } else if (err.response) {
         if (err.response.status === 401) {
           errorMessage = 'Bạn chưa đăng nhập hoặc không có quyền truy cập. Vui lòng đăng nhập lại.';
+          navigate('/login');
         } else if (err.response.status === 404) {
           errorMessage = 'Không tìm thấy dữ liệu nhóm học phần cho sinh viên này.';
         } else if (err.response.status === 500) {
@@ -134,6 +160,7 @@ const CourseGroups = () => {
           errorMessage = `Không tìm thấy danh sách sinh viên cho nhóm học phần ID ${groupId}.`;
         } else if (err.response.status === 401) {
           errorMessage = 'Bạn chưa đăng nhập hoặc không có quyền truy cập.';
+          navigate('/login');
         } else if (err.response.status === 500) {
           errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.';
         }
@@ -171,7 +198,6 @@ const CourseGroups = () => {
     navigate('/dashboard/test');
   };
 
-
   const handleJoinWithInvite = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -188,13 +214,25 @@ const CourseGroups = () => {
       });
       
       // Làm mới danh sách nhóm học phần sau khi tham gia thành công
-      fetchCourseGroups();
+      setTimeout(() => {
+        fetchCourseGroups();
+      }, 1000); // Thêm độ trễ để đảm bảo dữ liệu được đồng bộ
     } catch (err) {
-      setJoinStatus({
-        show: true,
-        success: false,
-        message:'Mã mời không hợp lệ hoặc đã hết hạn',
-      });
+      let errorMessage = 'Mã mời không hợp lệ hoặc đã hết hạn';
+
+        if (err.response && err.response.data && err.response.data.message) {
+          if (err.response.data.message === 'Student already in study group') {
+            errorMessage = 'Bạn đã tham gia nhóm học này rồi.';
+          } else {
+            errorMessage = err.response.data.message;
+          }
+        }
+
+        setJoinStatus({
+          show: true,
+          success: false,
+          message: errorMessage,
+        });
     } finally {
       setLoading(false);
       setShowInviteModal(false);
@@ -202,8 +240,6 @@ const CourseGroups = () => {
       setTimeout(() => setJoinStatus({ show: false, success: false, message: '' }), 3000);
     }
   };
-
-
 
   const renderInviteModal = () => (
     <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -396,7 +432,6 @@ const CourseGroups = () => {
               className="flex-1 min-w-[200px] border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#725C3A] focus:border-transparent transition-all duration-300"
             />
             <div className="flex space-x-3">
-             
               <button
                 onClick={() => setShowInviteModal(true)}
                 className="flex items-center px-4 py-2 bg-[#725C3A] hover:bg-[#5A4A2E] text-white rounded-lg transition-colors duration-300"
@@ -420,14 +455,14 @@ const CourseGroups = () => {
                     className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 hover:border-[#725C3A] hover:scale-[1.02]"
                   >
                     <div className="bg-[#725C3A] p-4">
-                      <h2 className="text-lg font-bold text-white truncate">{group.name}</h2>
+                      <h2 className="text-lg font-bold text-white truncate">{group.name_group}</h2>
+                    
                     </div>
                     <div className="p-4">
-                      <p className="text-gray-700 mb-2">Môn học: {group.subject}</p>
-                      <p className="text-gray-700 mb-2">Học kỳ: {group.semester}</p>
-                      <p className="text-gray-700 mb-2">Năm học: {group.academic_year}</p>
-                      <p className="text-gray-700 mb-4">Ghi chú: {group.note}</p>
+                    <p className="text-gray-700 mb-4">Tên môn học: {group.subject}</p>
 
+                    <p className="text-gray-700 mb-4">Ghi chú: {group.note}</p>
+                      <p className="text-gray-700 mb-2">Thời gian: {group.semester} - {group.academic_year}</p>
                       <div className="flex justify-end space-x-3 mt-2">
                         <div className="relative group">
                           <button

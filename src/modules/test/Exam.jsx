@@ -22,19 +22,22 @@ export default function ExamPage() {
     if (examDetail && examDetail.exam_questions && Array.isArray(examDetail.exam_questions)) {
       const mappedQuestions = examDetail.exam_questions.map((q) => {
         if (!q.question || !q.question.content || !q.question.answers) {
-          console.warn(`Câu hỏi ID ${q.id} không có dữ liệu hợp lệ:`, q);
+          console.warn(`Câu hỏi ID ${q.order_index} không có dữ liệu hợp lệ:`, q);
           return null;
         }
+       
+        console.log("du lieu q");
+        console.log(q);
         console.log(`Dữ liệu câu hỏi ID ${q.id}:`, q.question);
         const options = q.question.answers.map((ans) => {
-          console.log(`Đáp án của câu hỏi ID ${q.id}:`, ans);
+          console.log(`Đáp án của câu hỏi ID ${q.order_index}:`, ans);
           return {
-            id: ans.id.toString(),
+            id: (ans).toString(), 
             text: ans.content,
           };
         });
         return {
-          id: q.id,
+          id: q.order_index,
           text: q.question.content,
           options: options,
           selectedAnswer: null,
@@ -54,7 +57,7 @@ export default function ExamPage() {
       </div>
     );
   }
-
+console.log(axiosInstance);
   useEffect(() => {
     let timer;
     if (examState === "ongoing") {
@@ -62,7 +65,8 @@ export default function ExamPage() {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            handleSubmitExam();
+            // Chỉ thông báo hết giờ thay vì nộp bài tự động
+            setShowConfirmSubmit(true);
             return 0;
           }
           return prev - 1;
@@ -71,6 +75,7 @@ export default function ExamPage() {
     }
     return () => clearInterval(timer);
   }, [examState]);
+  
 
   useEffect(() => {
     if (examState !== "ongoing") return;

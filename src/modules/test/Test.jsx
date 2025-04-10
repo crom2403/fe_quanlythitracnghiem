@@ -27,14 +27,14 @@ export default function TestLayout() {
         setLoading(true);
         const response = await axiosInstance.get("/exam/get-all-exams-of-student");
         const apiTests = response.data;
-
+        console.log(apiTests);
         const mappedTests = apiTests.map((test) => ({
           id: test.id || 0,
           courseGroupId: test.id || 0,
-          title: typeof test.exam_id === "string" ? test.exam_id : "Không có tiêu đề",
+          title: typeof test.name_exam === "string" && test.name_exam.trim() !== "" ? test.name_exam : "Không có tiêu đềs",
           subject: typeof test.group_student_name === "string" ? test.group_student_name : "Không có môn học",
           startTime: "2025-04-07T09:00:00",
-          endTime: "2025-04-010T11:00:00",
+          endTime: "2025-04-10T11:00:00",
         }));
 
         setTests(mappedTests);
