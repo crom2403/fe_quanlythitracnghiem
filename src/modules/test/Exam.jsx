@@ -249,7 +249,7 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
       start_time: formatDateToISO(examDetail.start_time),
       end_time: formatDateToISO(examDetail.end_time),
       test_time: testTimeInSeconds,
-      list_question: prepareQuestions(),
+      list_question: prepareQuestions().filter((q) => q.is_selected ===true), // Chỉ gửi những câu hỏi có đáp án được chọn
     };
 
     console.log("Dữ liệu nộp bài chi tiết:", submissionData);
@@ -499,6 +499,7 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
                   >
                     Thử lại
                   </button>
+                 
                 </div>
                 )}
               </div>
