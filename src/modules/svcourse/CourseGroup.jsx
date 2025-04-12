@@ -30,7 +30,6 @@ const CourseGroups = () => {
     }
 
     if (parts.length === 3) {
-      // Trường hợp chỉ có 3 phần: "090908 - Lập trình hướng đối tượng - NH2019"
       const [_, subject, year] = parts;
       return {
         subject: subject || 'Không xác định',
@@ -39,7 +38,6 @@ const CourseGroups = () => {
       };
     }
 
-    // Trường hợp có 4 phần: "090908 - Lập trình hướng đối tượng - NH2019 - Học kỳ 1"
     const [_, subject, year, semester] = parts;
     return {
       subject: subject || 'Không xác định',
@@ -52,19 +50,18 @@ const CourseGroups = () => {
     setLoading(true);
     setError(null);
 
-    // Lấy thông tin người dùng từ sessionStorage
     const userInfo = sessionStorage.getItem('user-info');
     if (!userInfo) {
       setError('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.');
       setLoading(false);
-      navigate('/login'); // Chuyển hướng về trang đăng nhập
+      navigate('/login'); 
       return;
     }
 
     let studentCode;
     try {
       const user = JSON.parse(userInfo);
-      studentCode = user.student_code; // Tùy thuộc vào key trong dữ liệu trả về từ API
+      studentCode = user.student_code; 
       if (!studentCode) {
         throw new Error('Không tìm thấy mã sinh viên trong thông tin người dùng.');
       }
@@ -100,7 +97,6 @@ const CourseGroups = () => {
         }));
       });
 
-      console.log('Dữ liệu sau khi ánh xạ (formattedGroups):', formattedGroups);
       setCourseGroups(formattedGroups);
       setLoading(false);
     } catch (err) {
@@ -141,7 +137,6 @@ const CourseGroups = () => {
     try {
       const response = await axiosInstance.get(`/study-group/detail/${groupId}`);
       
-      // Chuyển đổi dữ liệu từ API để phù hợp với định dạng bạn cần
       const formattedStudents = response.data.map(student => ({
         id: student.id,
         fullName: student.fullname,
@@ -205,18 +200,15 @@ const CourseGroups = () => {
       const response = await axiosInstance.post('/study-group/invite', { 
         invite_code: inviteCode  
       });
-      
-      // Xử lý phản hồi thành công
       setJoinStatus({
         show: true,
         success: true,
         message: response.data.message || `Đã tham gia thành công lớp học với mã mời ${inviteCode}`,
       });
       
-      // Làm mới danh sách nhóm học phần sau khi tham gia thành công
       setTimeout(() => {
         fetchCourseGroups();
-      }, 1000); // Thêm độ trễ để đảm bảo dữ liệu được đồng bộ
+      }, 1000); 
     } catch (err) {
       let errorMessage = '';
 
@@ -245,7 +237,7 @@ const CourseGroups = () => {
 
   const renderInviteModal = () => (
     <div className="fixed inset-0 flex items-center justify-center z-50">
-      <div className="absolute inset-0 bg-black bg-opacity-30" onClick={() => setShowInviteModal(false)}></div>
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm duration-300 " onClick={() => setShowInviteModal(false)}></div>
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md z-10">
         <h3 className="text-xl font-bold text-gray-800 mb-4">Tham gia qua mã mời của giảng viên</h3>
         <form onSubmit={handleJoinWithInvite}>

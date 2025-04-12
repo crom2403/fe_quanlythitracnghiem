@@ -6,11 +6,14 @@ import axiosInstance from "../../axiosConfig";
 export default function ExamPage() {
   const navigate = useNavigate();
   const { examDetail } = useExamStore();
-  console.log("examDetail trong ExamPage:", examDetail);
+  //console.log("examDetail trong ExamPage:", examDetail);
+  const [submitFailed, setSubmitFailed] = useState(false);
 
   const [timeRemaining, setTimeRemaining] = useState(
     examDetail ? examDetail.duration_minutes * 60 : 600
   );
+  const [isSubmitting, setIsSubmitting] = useState(false); // Quản lý trạng thái loading
+const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị popup thử lại khi thất bại
   const [examState, setExamState] = useState("ongoing");
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
@@ -18,8 +21,8 @@ export default function ExamPage() {
   const [warningMessage, setWarningMessage] = useState("");
   const [questions, setQuestions] = useState([]);
   const [reviewSettings, setReviewSettings] = useState({
-    allow_review: examDetail.allow_review,
-    allow_review_point: examDetail.allow_review_point,
+    allow_review: examDetail?.allow_review || false,
+    allow_review_point: examDetail?.allow_review_point || false,
   });
 
   const prevExamDetailRef = useRef(null);
@@ -75,6 +78,7 @@ export default function ExamPage() {
             options: options.map(({ originalIndex, ...rest }) => rest),
             selectedAnswer: null,
             correctAnswer: newCorrectAnswerId,
+            is_selected: false, // Ban đầu là false (boolean)
           };
         }
 
@@ -84,6 +88,7 @@ export default function ExamPage() {
           options,
           selectedAnswer: null,
           correctAnswer: correctAnswerId,
+          is_selected: false, // Ban đầu là false (boolean)
         };
       }).filter((q) => q !== null);
 
@@ -174,7 +179,9 @@ export default function ExamPage() {
     if (examState !== "ongoing") return;
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === questionId ? { ...q, selectedAnswer: answerId } : q
+        q.id === questionId
+          ? { ...q, selectedAnswer: answerId, is_selected: true } // Cập nhật is_selected thành true (boolean)
+          : q
       )
     );
   };
@@ -188,43 +195,96 @@ export default function ExamPage() {
   };
 
   const handleSubmitExam = async () => {
-  setExamState("submitted");
+    setIsSubmitting(true);
 
-  const submissionData = {
-    exam_id: examDetail.id, 
-    list_question: questions.map((q) => ({
-      question_id: q.id, 
-      list_answer: q.selectedAnswer
-        ? [
-            {
-              answer_id: q.selectedAnswer, 
-              is_selected: true,
-            },
-          ]
-        : [],
-    })),
-  };
+    // Helper function để format ngày giờ
+    const formatDateToISO = (date) => {
+      if (!date) return new Date().toISOString();
+      const d = new Date(date);
+      return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+    };
 
-  try {
-    const response = await axiosInstance.post("/exam-attempt", submissionData, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    console.log("Nộp bài thành công:", response.data);
+    // Chuyển đổi thời gian từ phút sang giây
+    const testTimeInSeconds = (examDetail.duration_minutes || 0) * 60;
 
-    if (response.data.success) {
-      setWarningMessage(response.data.message || "Nộp bài thi thành công");
-      setShowWarning(true);
+    // Hàm lấy answer_id gốc từ selectedAnswer
+    const getAnswerIdFromOption = (question, selectedAnswer) => {
+      // Nếu không có đáp án được chọn, trả về undefined thay vì null
+      if (!selectedAnswer) return undefined;
+
+      const originalQuestion = examDetail.exam_questions.find(
+        (q) => q.order_index === question.id
+      );
+
+      if (!originalQuestion?.question?.answers) {
+        return undefined;
+      }
+
+      // Lấy index của đáp án được chọn (A=0, B=1, etc.)
+      const selectedIndex = selectedAnswer.charCodeAt(0) - 65;
+      
+      // Lấy answer_id gốc từ danh sách đáp án
+      const originalAnswer = originalQuestion.question.answers[selectedIndex];
+      return originalAnswer?.id;
+    };
+
+    // Chuẩn bị danh sách câu hỏi và đáp án
+    const prepareQuestions = () => {
+      return questions.map((q) => {
+        const answerId = getAnswerIdFromOption(q, q.selectedAnswer);
+        
+        return {
+          question_id: q.id,
+          // Nếu không có đáp án được chọn, gửi null thay vì xóa trường answer_id
+          anwer_id: answerId !== undefined ? answerId : null,
+          is_selected: Boolean(q.selectedAnswer), // Đảm bảo giá trị boolean
+        };
+      });
+    };
+
+    // Tạo dữ liệu gửi đi
+    const submissionData = {
+      exam_id: examDetail.id,
+      tab_switch_count: tabSwitchCount,
+      start_time: formatDateToISO(examDetail.start_time),
+      end_time: formatDateToISO(examDetail.end_time),
+      test_time: testTimeInSeconds,
+      list_question: prepareQuestions(),
+    };
+
+    console.log("Dữ liệu nộp bài chi tiết:", submissionData);
+
+    try {
+      const response = await axiosInstance.post("/exam-attempt", submissionData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.data.success === true) {
+        console.log("Nộp bài thành công:", response.data);
+        setExamState("submitted");
+        setShowConfirmSubmit(false);
+        setShowRetryPopup(false);
+        setSubmitFailed(false);
+      } else {
+        console.error("Nộp bài thất bại:", response.data);
+        setShowConfirmSubmit(false);
+        setShowRetryPopup(true);
+        setSubmitFailed(true);
+      }
+    } catch (err) {
+      console.error("Lỗi khi nộp bài:", err);
+      if (err.response?.data) {
+        console.error("Chi tiết lỗi từ API:", err.response.data);
+      }
+      setShowConfirmSubmit(false);
+      setShowRetryPopup(true);
+      setSubmitFailed(true);
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (err) {
-    console.error("Lỗi khi nộp bài:", err);
-    setWarningMessage("Không thể nộp bài. Vui lòng thử lại sau.");
-    setShowWarning(true);
-  }
-
-  console.log("Thống kê hành vi:", { tabSwitchCount });
-};
+  };
 
   const scrollToQuestion = (questionId) => {
     const element = document.getElementById(`question-${questionId}`);
@@ -254,12 +314,13 @@ export default function ExamPage() {
             <button
               onClick={handleOpenConfirmSubmit}
               className="bg-blue-600 text-white px-4 py-2 rounded"
+              disabled={isSubmitting}
             >
               Nộp Bài
             </button>
           </div>
         </div>
-
+  
         <div className="max-w-4xl mx-auto px-4 py-6 mt-20 mr-80">
           {questions.length === 0 ? (
             <p className="text-gray-600 text-center">Không có câu hỏi nào để hiển thị.</p>
@@ -286,6 +347,7 @@ export default function ExamPage() {
                               ? "border-blue-500 bg-blue-100"
                               : "border-gray-300 hover:bg-gray-100"
                           }`}
+                          disabled={isSubmitting}
                         >
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 font-bold ${
@@ -308,7 +370,7 @@ export default function ExamPage() {
             ))
           )}
         </div>
-
+  
         <div className="fixed top-20 right-5 w-72 bg-white shadow rounded-lg p-4 max-h-[calc(100vh-4rem)] overflow-auto">
           <div className="text-center font-bold mb-4">Chọn Câu Hỏi</div>
           <div className="flex flex-col gap-2">
@@ -321,46 +383,129 @@ export default function ExamPage() {
                     ? "bg-green-100 border-green-400 text-green-700"
                     : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
                 }`}
+                disabled={isSubmitting}
               >
                 {q.id}
               </button>
             ))}
           </div>
         </div>
-
+  
         {showConfirmSubmit && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm backdrop-filter transition-all ease-in-out duration-300 bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="text-blue-500 text-5xl">ℹ</div>
                 <h2 className="text-xl font-bold">
-                  Bạn có chắc chắn muốn nộp bài ?
+                  {isSubmitting ? "Đang nộp bài..." : "Bạn có chắc chắn muốn nộp bài ?"}
                 </h2>
-                <p className="text-gray-600">
-                  Khi xác nhận nộp bài, bạn sẽ không thể sửa lại bài thi của mình. Chúc bạn may mắn!
-                </p>
-                <div className="flex space-x-4 mt-4">
-                  <button
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                    onClick={() => {
-                      handleSubmitExam();
-                      handleCloseConfirmSubmit();
-                    }}
-                  >
-                    Vâng, chắc chắn!
-                  </button>
-                  <button
-                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-                    onClick={handleCloseConfirmSubmit}
-                  >
-                    Hủy
-                  </button>
-                </div>
+                {!isSubmitting && (
+                  <p className="text-gray-600">
+                    Khi xác nhận nộp bài, bạn sẽ không thể sửa lại bài thi của mình. Chúc bạn may mắn!
+                  </p>
+                )}
+                {isSubmitting ? (
+                  <div className="flex justify-center items-center">
+                    <svg
+                      className="animate-spin h-8 w-8 text-blue-600"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="flex space-x-4 mt-4">
+                    <button
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      onClick={() => {
+                        handleSubmitExam();
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Vâng, chắc chắn!
+                    </button>
+                    <button
+                      className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+                      onClick={handleCloseConfirmSubmit}
+                      disabled={isSubmitting}
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
 
+  
+        {showRetryPopup && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm backdrop-filter transition-all ease-in-out duration-300 bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="text-red-500 text-5xl">⚠️</div>
+                <h2 className="text-xl font-bold text-red-600">
+                  Nộp bài thất bại
+                </h2>
+                <p className="text-gray-600">
+                  Không thể nộp bài. Vui lòng thử lại hoặc quay lại sau.
+                </p>
+                {isSubmitting ? (
+                  <div className="flex justify-center items-center">
+                    <svg
+                      className="animate-spin h-8 w-8 text-blue-600"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="flex space-x-4 mt-4">
+                
+                  <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    onClick={() => {
+                      handleSubmitExam();
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    Thử lại
+                  </button>
+                </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+  
         {showWarning && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm backdrop-filter transition-all ease-in-out duration-300 bg-opacity-50 z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
@@ -444,8 +589,6 @@ export default function ExamPage() {
           </div>
         )}
 
-
-
         {reviewSettings.allow_review && (
           <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow-2xl">
             <h3 className="text-2xl font-bold mb-4 text-gray-700">
@@ -480,13 +623,13 @@ export default function ExamPage() {
           </div>
         )}
         <div className="max-w-3xl mx-auto mt-8 text-center">
-        <button
-              className=" px-6 py-3 bg-gray-200 text-gray-700 rounded-lg text-lg font-bold hover:bg-gray-300 transition duration-300 shadow-lg mt-6"
-              onClick={() => navigate("/dashboard")}
-            >
-              Quay về trang đề thi
-            </button>
-            </div>
+          <button
+            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg text-lg font-bold hover:bg-gray-300 transition duration-300 shadow-lg mt-6"
+            onClick={() => navigate("/dashboard")}
+          >
+            Quay về trang đề thi
+          </button>
+        </div>
       </div>
     );
   };

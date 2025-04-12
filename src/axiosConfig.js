@@ -3,7 +3,7 @@ import useUserStore from './modules/user/useUserStore';
 import examStore from './modules/store/examStore';
 const axiosInstance = axios.create({
     baseURL:'https://inevitable-justinn-tsondev-41d66d2f.koyeb.app/api/v1',
-    timeout:10000,
+    timeout:100000,
     headers:{
         'Content-Type':'application/json',
     },

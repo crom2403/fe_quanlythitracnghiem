@@ -4,7 +4,8 @@ import ExamComponent from "./Exam.jsx";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../axiosConfig";
 import useExamStore from "../store/examStore";
-
+import customParseFormat from "dayjs/plugin/customParseFormat";
+dayjs.extend(customParseFormat);
 export default function TestLayout() {
   const navigate = useNavigate();
   const { testId } = useParams();
@@ -27,14 +28,15 @@ export default function TestLayout() {
         setLoading(true);
         const response = await axiosInstance.get("/exam/get-all-exams-of-student");
         const apiTests = response.data;
-
+        console.log(apiTests);
         const mappedTests = apiTests.map((test) => ({
           id: test.id || 0,
           courseGroupId: test.id || 0,
-          title: typeof test.exam_id === "string" ? test.exam_id : "Không có tiêu đề",
+          title: typeof test.name_exam === "string" && test.name_exam.trim() !== "" ? test.name_exam : "Không có tiêu đềs",
           subject: typeof test.group_student_name === "string" ? test.group_student_name : "Không có môn học",
-          startTime: "2025-04-07T09:00:00",
-          endTime: "2025-04-010T11:00:00",
+          startTime: dayjs(test.start_time, "DD/MM/YYYY, hh:mm A").toISOString(),
+          endTime: dayjs(test.end_time, "DD/MM/YYYY, hh:mm A").toISOString(),
+
         }));
 
         setTests(mappedTests);
@@ -89,7 +91,7 @@ export default function TestLayout() {
 
   const handleViewDetail = async (test) => {
     try {
-      setFetchingDetail(true); // Bắt đầu fetching
+      setFetchingDetail(true); 
       const response = await axiosInstance.get(`/exam/${test.id}`);
       const examDetail = response.data;
       console.log("Dữ liệu từ API số 32:", examDetail);
@@ -101,7 +103,7 @@ export default function TestLayout() {
       console.error("Lỗi khi lấy chi tiết đề thi:", err);
       setError("Không thể lấy chi tiết đề thi. Vui lòng thử lại sau.");
     } finally {
-      setFetchingDetail(false); // Kết thúc fetching
+      setFetchingDetail(false); 
     }
   };
 
@@ -161,13 +163,13 @@ export default function TestLayout() {
               <div className="flex items-center justify-between border-b pb-2">
                 <span className="font-semibold text-gray-600">Bắt đầu:</span>
                 <span className="font-bold text-blue-700">
-                  {test.startTime ? dayjs(test.startTime).format("DD/MM/YYYY HH:mm") : "Không xác định"}
+                {test.startTime ? dayjs(test.startTime).format("DD/MM/YYYY HH:mm") : "Không xác định"}
                 </span>
               </div>
               <div className="flex items-center justify-between border-b pb-2">
                 <span className="font-semibold text-gray-600">Kết thúc:</span>
                 <span className="font-bold text-red-700">
-                  {test.endTime ? dayjs(test.endTime).format("DD/MM/YYYY HH:mm") : "Không xác định"}
+                {test.endTime ? dayjs(test.end).format("DD/MM/YYYY HH:mm") : "Không xác định"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
