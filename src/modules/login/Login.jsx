@@ -49,7 +49,7 @@ const Login = () => {
         ></input>
 
         <label className="block text-blue-700 text-left w-full mb-2 mt-2 ml-10 text-xl">
-          Password
+          Mật khẩu
         </label>
         <input
           type="password"

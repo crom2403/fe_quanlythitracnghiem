@@ -12,9 +12,10 @@ import CustomModal from '../../components/modal/CustomModal';
 import CustomButton from '../../components/button/CustomButton';
 import PaginatedTable from '../../components/pagination/PaginatedTable';
 
-// Danh sách môn học, chương, độ khó (giữ nguyên vì chưa có trong API)
+// Danh sách môn học, chương, độ khó
 const subjects = [
   'Tất cả',
+  'Cơ sở dữ liệu',
   'Cấu trúc dữ liệu và giải thuật',
   'Lập trình hướng đối tượng',
   'Nhập môn lập trình',
@@ -35,14 +36,22 @@ const Question = () => {
   const [questionCorrectAnswerIndex, setQuestionCorrectAnswerIndex] = useState(-1);
   const [selectedLevelIndex, setSelectedLevelIndex] = useState(0);
   const [expandedIndex, setExpandedIndex] = useState(null);
+  const [expandedColumn, setExpandedColumn] = useState(null);
   const [isRequestedClearTextarea, setIsRequestedClearTextarea] = useState(false);
   const [questionsData, setQuestionsData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 10;
+  const [totalItems, setTotalItems] = useState(0);
+  const [limit, setLimit] = useState(10);
 
-  const toggleExpand = (index) => {
-    setExpandedIndex(index);
+  const toggleExpand = (index, column) => {
+    if (expandedIndex === index && expandedColumn === column) {
+      setExpandedIndex(null);
+      setExpandedColumn(null);
+    } else {
+      setExpandedIndex(index);
+      setExpandedColumn(column);
+    }
   };
 
   const handlePageChange = (page) => {
@@ -57,6 +66,11 @@ const Question = () => {
   const closeModal = () => {
     setIsOpenModal(false);
     setModalName('');
+    setListAnswer([]);
+    setAnswerContent(null);
+    setQuestionContent('');
+    setIsRequestedAddAnswer(false);
+    setIsExistedAnswer(false);
   };
 
   const [activeTab, setActiveTab] = useState('them-thu-cong');
@@ -118,23 +132,26 @@ const Question = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const result = await questions(); // Gọi hàm questions từ QuestionService
-        setQuestionsData(result || []); // Lấy toàn bộ câu hỏi từ items
-        setTotalPages(Math.ceil((result?.length || 0) / itemsPerPage)); // Tính tổng số trang dựa trên độ dài items
+        const result = await questions(currentPage, limit);
+        if (result && result.items) {
+          setQuestionsData(result.items);
+          setTotalPages(result.totalPages || 1);
+          setTotalItems(result.total || 0);
+          setLimit(result.limit || 10);
+        } else {
+          setQuestionsData([]);
+          setTotalPages(1);
+          setTotalItems(0);
+        }
       } catch (err) {
-        console.error("Fetch questions failed: " + err.message);
+        console.error("Lấy câu hỏi thất bại: " + err.message);
         setQuestionsData([]);
         setTotalPages(1);
+        setTotalItems(0);
       }
     };
     fetchQuestions();
-  }, []); // Chỉ gọi một lần khi component mount để lấy toàn bộ câu hỏi
-
-  // Phân trang cục bộ dựa trên questionsData
-  const currentData = questionsData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  }, [currentPage, limit]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -158,7 +175,7 @@ const Question = () => {
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col ">
+                <div className="flex flex-col">
                   <p className="text-blue-800">Chương</p>
                   <select
                     value={questionChapterIndex}
@@ -194,6 +211,7 @@ const Question = () => {
               onChange={(e) => creatNewQuesion(e.target.value)}
               type="text"
               className="w-full p-2 mt-4 min-h-60 border rounded-xl focus:border-3 focus:outline-none focus:border-blue-400 focus:shadow-blue-300 focus:shadow-lg"
+              placeholder="Nhập nội dung câu hỏi..."
             />
             <div className="w-full flex flex-col mt-8 mr-8 justify-center items-center">
               <p className="font-bold mb-2 text-blue-800">Danh sách đáp án</p>
@@ -203,7 +221,7 @@ const Question = () => {
                     {listAnswer.map((answer, index) => (
                       <li key={index} className="hover:bg-blue-800 hover:text-white">
                         <div className="w-full flex items-center justify-evenly">
-                          <div className="min-w-8 text-xl ">{index + 1}</div>
+                          <div className="min-w-8 text-xl">{index + 1}</div>
                           <div
                             className={`flex-1 max-w-96 ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
                             onClick={() => toggleExpand(index)}
@@ -355,7 +373,7 @@ const Question = () => {
                     ))}
                   </select>
                 </div>
-                <div className="flex flex-col ">
+                <div className="flex flex-col">
                   <p className="text-blue-800">Chương</p>
                   <select
                     value={questionChapterIndex}
@@ -391,6 +409,7 @@ const Question = () => {
               onChange={(e) => creatNewQuesion(e.target.value)}
               type="text"
               className="w-full p-2 mt-4 min-h-60 border rounded-xl focus:border-3 focus:outline-none focus:border-blue-400 focus:shadow-blue-300 focus:shadow-lg"
+              placeholder="Nhập nội dung câu hỏi..."
             />
             <CustomButton
               classname="p-2 text-xl w-4/5 ml-20 mt-8 bg-red-700"
@@ -398,12 +417,14 @@ const Question = () => {
             />
           </div>
         );
+      default:
+        return null;
     }
   };
 
   return (
     <div className="w-full min-h-screen bg-gray-100 flex justify-center" style={{ fontFamily: 'PlayFair Display' }}>
-      <div className="w-9/10 h-full bg-white mt-8 rounded-2xl">
+      <div className="w-9/10 h-full bg-white mt-8 rounded-2xl flex flex-col">
         <CustomModal
           isOpen={isOpenModal}
           onClose={closeModal}
@@ -416,7 +437,7 @@ const Question = () => {
           <p className="font-bold text-xl">Tất cả câu hỏi</p>
           <div
             onClick={() => openModal('them-cau-hoi')}
-            className="flex space-x-2 ml-auto h-3/4 items-center bg-red-700 text-white p-2 rounded-xl hover:bg-blue-900"
+            className="flex p-2 space-x-2 ml-auto h-3/4 items-center bg-red-700 text-white p-2 rounded-xl hover:bg-blue-900"
           >
             <PlusIcon className="w-5 h-5 mr-2" />
             THÊM CÂU HỎI MỚI
@@ -473,63 +494,78 @@ const Question = () => {
             <SearchIcon className="w-6 h-6" />
           </div>
         </div>
-        <div className="flex items-center space-x-8 mt-4 ml-8 mr-8 max-h-140 flex-grow">
-          <table className="w-full mt-2">
-            <thead>
-              <tr className="w-full">
-                <th className="text-center min-w-16">STT</th>
-                <th className="text-center min-w-64">Nội dung câu hỏi</th>
-                <th className="text-center max-w-32">Môn học</th>
-                <th className="text-center pr-8 min-w-32">Độ khó</th>
-                <th className="text-center min-w-32">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentData.map((item, index) => (
-                <tr key={item.id} className="hover:bg-black hover:text-white">
-                  <td className="text-center py-4 text-blue-600 font-bold">
-                    {(currentPage - 1) * itemsPerPage + index + 1}
-                  </td>
-                  <td>
-                    <div
-                      className={`flex-1 max-w-130 text-center ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
-                      onClick={() => toggleExpand(index)}
-                    >
-                      {item.content}
-                    </div>
-                  </td>
-                  <td className="text-center overflow-hidden w-full">
-                    <div
-                      className={`flex-1 max-w-full text-center ${expandedIndex === index ? 'whitespace-normal' : 'overflow-hidden text-ellipsis whitespace-nowrap'} break-words`}
-                    >
-                      {/* Môn học chưa có trong API, tạm để mặc định */}
-                      {subjects[0]}
-                    </div>
-                  </td>
-                  <td className="text-center pr-8">
-                    {item.difficulty_level.charAt(0).toUpperCase() + item.difficulty_level.slice(1)}
-                  </td>
-                  <td className="text-center">
-                    <div className="flex items-center justify-center space-x-2">
-                      <div
-                        onClick={() => openModal('sua-cau-hoi')}
-                        className="text-white bg-blue-900 rounded-2xl p-1"
-                      >
-                        <PencilIcon className="w-5 h-5" />
-                      </div>
-                      <div
-                        className="text-white bg-red-700 rounded-2xl p-1"
-                      >
-                        <XIcon className="w-5 h-5" />
-                      </div>
-                    </div>
-                  </td>
+        <div className="mt-4 ml-8 mr-8 flex-grow">
+          <div className="max-h-[600px] overflow-y-auto overflow-x-hidden">
+            <table className="w-full border-collapse table-fixed">
+              <thead className="sticky top-0 bg-blue-900 text-white">
+                <tr>
+                  <th className="text-center py-3 w-[5%]">STT</th>
+                  <th className="text-center py-3 w-[45%]">Nội dung câu hỏi</th>
+                  <th className="text-center py-3 w-[20%]">Môn học</th>
+                  <th className="text-center py-3 w-[15%]">Độ khó</th>
+                  <th className="text-center py-3 w-[15%]">Hành động</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {questionsData.map((item, index) => (
+                  <tr
+                    key={item.id}
+                    className={`hover:bg-blue-100 even:bg-gray-50 transition-all duration-300 ${
+                      expandedIndex === index ? 'h-auto' : 'h-12'
+                    }`}
+                  >
+                    <td className="text-center py-3 text-blue-600 font-bold">
+                      {(currentPage - 1) * limit + index + 1}
+                    </td>
+                    <td className="py-3 px-2">
+                      <div
+                        className={`text-center ${
+                          expandedIndex === index && expandedColumn === 'content'
+                            ? 'whitespace-normal break-words'
+                            : 'overflow-hidden text-ellipsis whitespace-nowrap'
+                        }`}
+                        onClick={() => toggleExpand(index, 'content')}
+                      >
+                        {item.content}
+                      </div>
+                    </td>
+                    <td className="py-3 px-2">
+                      <div
+                        className={`text-center ${
+                          expandedIndex === index && expandedColumn === 'subject'
+                            ? 'whitespace-normal break-words'
+                            : 'overflow-hidden text-ellipsis whitespace-nowrap'
+                        }`}
+                        onClick={() => toggleExpand(index, 'subject')}
+                      >
+                        {item.subject_name}
+                      </div>
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {item.difficulty_level.charAt(0).toUpperCase() + item.difficulty_level.slice(1)}
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      <div className="flex items-center justify-center space-x-2">
+                        <div
+                          onClick={() => openModal('sua-cau-hoi')}
+                          className="text-white bg-blue-900 rounded-2xl p-1 hover:bg-blue-700 cursor-pointer"
+                        >
+                          <PencilIcon className="w-5 h-5" />
+                        </div>
+                        <div
+                          className="text-white bg-red-700 rounded-2xl p-1 hover:bg-red-500 cursor-pointer"
+                        >
+                          <XIcon className="w-5 h-5" />
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className="flex justify-center mt-8 mb-8">
+        <div className="flex justify-center mt-4 mb-8">
           <PaginatedTable totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} />
         </div>
       </div>

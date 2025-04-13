@@ -115,7 +115,7 @@ const Group = () => {
 
       <div className="mt-4">
         {Array.from(groupedCourses.entries()).map(([key, courses], index) => (
-          <div key={key} className="min-h-46 w-full text-black text-xl mt-4 ml-16">
+          <div key={key} className="min-h-46 w-full text-black text-xl mt-4">
             <p>{coursesNameMap.get(key) || 'Đang tải tên học phần...'}</p>
             <div className="flex flex-wrap">
               {courses.map((course, subIndex) => {
