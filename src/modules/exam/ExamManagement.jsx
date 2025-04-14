@@ -76,6 +76,10 @@ const ExamManagement = () => {
   const [view, setView] = useState('list'); // list, create, detail, studentDetail
   const [selectedExam, setSelectedExam] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [error, setError] = useState({
+    date: '',
+    duration: ''
+  });
   const [newExam, setNewExam] = useState({
     title: '',
     course: '',
@@ -123,9 +127,31 @@ const ExamManagement = () => {
     });
   };
 
+  useEffect(() => {
+    const { startDate, endDate } = newExam;
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (end <= start) {
+        setError(prev => ({ ...prev, date: "Thời gian kết thúc phải sau thời gian bắt đầu." }));
+      } else {
+        setError(prev => ({ ...prev, date: "" }));
+      }
+    }
+  }, [newExam.startDate, newExam.endDate]);
+  
   const handleExamSubmit = (e) => {
     e.preventDefault();
     
+    // Kiểm tra duration
+    if (!/^\d+$/.test(newExam.duration) || parseInt(newExam.duration) <= 0) {
+      setError(prev => ({
+        ...prev,
+        duration: 'Vui lòng nhập số nguyên dương'
+      }));
+      return;
+    }
+
     const formattedStartDate = `${newExam.startDate}, ${newExam.startTime}`;
     const formattedEndDate = `${newExam.endDate}, ${newExam.endTime}`;
     
@@ -136,7 +162,7 @@ const ExamManagement = () => {
       group: newExam.group,
       startDate: formattedStartDate,
       endDate: formattedEndDate,
-      duration: newExam.duration,
+      duration: parseInt(newExam.duration),
       status: 'open',
       students: {
         total: 0,
@@ -187,7 +213,7 @@ const ExamManagement = () => {
     setView('detail');
     setSelectedStudent(null);
   };
-
+  
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       {view === 'list' && (
@@ -275,146 +301,170 @@ const ExamManagement = () => {
         </div>
       )}
 
-{view === 'create' && (
-  <div className="max-w-4xl mx-auto bg-white rounded-md shadow p-6">
-    <h2 className="text-xl font-semibold border-b pb-4 mb-6">Tạo mới đề thi</h2>
-    
-    <form onSubmit={handleExamSubmit}>
-      <div className="space-y-6">
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">Tên đề kiểm tra</label>
-          <input
-            type="text"
-            className="w-full border rounded-md px-3 py-2"
-            placeholder="Nhập tên đề kiểm tra"
-            value={newExam.title}
-            onChange={(e) => setNewExam({...newExam, title: e.target.value})}
-            required
-          />
-        </div>
+      {view === 'create' && (
+        <div className="max-w-4xl mx-auto bg-white rounded-md shadow p-6">
+          <h2 className="text-xl font-semibold border-b pb-4 mb-6">Tạo mới đề thi</h2>
+          
+          <form onSubmit={handleExamSubmit}>
+            <div className="space-y-6">
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">Tên đề kiểm tra</label>
+                <input
+                  type="text"
+                  className="w-full border rounded-md px-3 py-2"
+                  placeholder="Nhập tên đề kiểm tra"
+                  value={newExam.title}
+                  onChange={(e) => setNewExam({...newExam, title: e.target.value})}
+                  required
+                />
+              </div>
 
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">Thời gian bắt đầu</label>
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              className="w-full border rounded-md px-3 py-2"
-              placeholder="Từ"
-              value={newExam.startDate}
-              onChange={(e) => setNewExam({...newExam, startDate: e.target.value})}
-              required
-            />
-            <input
-              type="text"
-              className="w-full border rounded-md px-3 py-2"
-              placeholder="Đến"
-              value={newExam.endDate}
-              onChange={(e) => setNewExam({...newExam, endDate: e.target.value})}
-              required
-            />
-          </div>
-        </div>
-        
-        <div className="flex items-center">
-          <div className="flex-grow">
-            <label className="block mb-2 font-medium text-gray-700">Thời gian làm bài</label>
-            <div className="flex">
-              <input
-                type="text"
-                className="flex-grow border rounded-l-md px-3 py-2"
-                placeholder="00"
-                value={newExam.duration}
-                onChange={(e) => setNewExam({...newExam, duration: e.target.value})}
-                required
-              />
-              <div className="border rounded-r-md px-3 py-2 bg-gray-100 text-center w-20">
-                phút
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">Thời gian bắt đầu</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <input
+                    type="datetime-local"
+                    className="w-full border rounded-md px-3 py-2"
+                    placeholder="Từ"
+                    value={newExam.startDate}
+                    onChange={(e) =>
+                      setNewExam({ ...newExam, startDate: e.target.value })
+                    }
+                    required
+                  />
+                  <input
+                    type="datetime-local"
+                    className="w-full border rounded-md px-3 py-2"
+                    placeholder="Đến"
+                    value={newExam.endDate}
+                    onChange={(e) =>
+                      setNewExam({ ...newExam, endDate: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                {error.date && (
+                  <p className="text-red-500 text-sm mt-1 col-span-2">{error.date}</p>
+                )}
+              </div>
+              
+              <div className="flex items-center">
+                <div className="flex-grow">
+                  <label className="block mb-2 font-medium text-gray-700">Thời gian làm bài</label>
+                  <div className="flex">
+                    <input
+                      type="text"
+                      className={`flex-grow border rounded-l-md px-3 py-2 ${
+                        error.duration ? 'border-red-500' : ''
+                      }`}
+                      placeholder="00"
+                      value={newExam.duration}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Chỉ cho phép số nguyên dương
+                        if (value === '' || (/^\d+$/.test(value) && parseInt(value) > 0)) {
+                          setNewExam({...newExam, duration: value});
+                          setError(prev => ({ ...prev, duration: ''}));
+                        } else {
+                          setError(prev => ({
+                            ...prev,
+                            duration: 'Vui lòng nhập số nguyên dương'
+                          }));
+                        }
+                      }}
+                      required
+                    />
+                    <div className="border rounded-r-md px-3 py-2 bg-gray-100 text-center w-20">
+                      phút
+                    </div>
+                  </div>
+                  {error.duration && (
+                    <p className="text-red-500 text-sm mt-1">{error.duration}</p>
+                  )}
+                </div>
+                <div className="flex-grow"></div>
+              </div>
+              
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">Giao cho</label>
+                <select
+                  className="w-full border rounded-md px-3 py-2"
+                  value={newExam.group}
+                  onChange={(e) => setNewExam({...newExam, group: e.target.value})}
+                >
+                  <option value="">Chọn nhóm học phần giảng dạy...</option>
+                  <option value="Nhóm 1">Nhóm 1</option>
+                  <option value="Nhóm 2">Nhóm 2</option>
+                  <option value="Nhóm 3">Nhóm 3</option>
+                  <option value="Nhóm 4">Nhóm 4</option>
+                </select>
+                <div className="mt-4 h-32 flex items-center justify-center border rounded-md bg-gray-50">
+                  <div className="text-center text-gray-400">
+                    <img src="/api/placeholder/80/80" alt="placeholder" className="mx-auto mb-2 opacity-25" />
+                    <div>Chưa chọn nhóm giảng dạy</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">Chương</label>
+                <select
+                  className="w-full border rounded-md px-3 py-2"
+                  value={newExam.chapter}
+                  onChange={(e) => setNewExam({...newExam, chapter: e.target.value})}
+                >
+                  <option value="">Chọn nhiều chương...</option>
+                  <option value="Chương 1">Chương 1</option>
+                  <option value="Chương 2">Chương 2</option>
+                  <option value="Chương 3">Chương 3</option>
+                </select>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block mb-2 font-medium text-gray-700">Số câu dễ</label>
+                  <input
+                    type="text"
+                    className="w-full border rounded-md px-3 py-2"
+                    placeholder="0"
+                    value={newExam.easyQuestions}
+                    onChange={(e) => setNewExam({...newExam, easyQuestions: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 font-medium text-gray-700">Số câu trung bình</label>
+                  <input
+                    type="text"
+                    className="w-full border rounded-md px-3 py-2"
+                    placeholder="0"
+                    value={newExam.mediumQuestions}
+                    onChange={(e) => setNewExam({...newExam, mediumQuestions: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 font-medium text-gray-700">Số câu khó</label>
+                  <input
+                    type="text"
+                    className="w-full border rounded-md px-3 py-2"
+                    placeholder="0"
+                    value={newExam.hardQuestions}
+                    onChange={(e) => setNewExam({...newExam, hardQuestions: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white font-medium py-3 px-6 rounded-md"
+                >
+                  Tạo đề thi
+                </button>
               </div>
             </div>
-          </div>
-          <div className="flex-grow"></div>
+          </form>
         </div>
-        
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">Giao cho</label>
-          <select
-            className="w-full border rounded-md px-3 py-2"
-            value={newExam.group}
-            onChange={(e) => setNewExam({...newExam, group: e.target.value})}
-          >
-            <option value="">Chọn nhóm học phần giảng dạy...</option>
-            <option value="Nhóm 1">Nhóm 1</option>
-            <option value="Nhóm 2">Nhóm 2</option>
-            <option value="Nhóm 3">Nhóm 3</option>
-            <option value="Nhóm 4">Nhóm 4</option>
-          </select>
-          <div className="mt-4 h-32 flex items-center justify-center border rounded-md bg-gray-50">
-            <div className="text-center text-gray-400">
-              <img src="/api/placeholder/80/80" alt="placeholder" className="mx-auto mb-2 opacity-25" />
-              <div>Chưa chọn nhóm giảng dạy</div>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">Chương</label>
-          <select
-            className="w-full border rounded-md px-3 py-2"
-            value={newExam.chapter}
-            onChange={(e) => setNewExam({...newExam, chapter: e.target.value})}
-          >
-            <option value="">Chọn nhiều chương...</option>
-            <option value="Chương 1">Chương 1</option>
-            <option value="Chương 2">Chương 2</option>
-            <option value="Chương 3">Chương 3</option>
-          </select>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="block mb-2 font-medium text-gray-700">Số câu dễ</label>
-            <input
-              type="text"
-              className="w-full border rounded-md px-3 py-2"
-              placeholder="0"
-              value={newExam.easyQuestions}
-              onChange={(e) => setNewExam({...newExam, easyQuestions: e.target.value})}
-            />
-          </div>
-          <div>
-            <label className="block mb-2 font-medium text-gray-700">Số câu trung bình</label>
-            <input
-              type="text"
-              className="w-full border rounded-md px-3 py-2"
-              placeholder="0"
-              value={newExam.mediumQuestions}
-              onChange={(e) => setNewExam({...newExam, mediumQuestions: e.target.value})}
-            />
-          </div>
-          <div>
-            <label className="block mb-2 font-medium text-gray-700">Số câu khó</label>
-            <input
-              type="text"
-              className="w-full border rounded-md px-3 py-2"
-              placeholder="0"
-              value={newExam.hardQuestions}
-              onChange={(e) => setNewExam({...newExam, hardQuestions: e.target.value})}
-            />
-          </div>
-        </div>
-        
-        <div>
-          <button
-            type="submit"
-            className="bg-blue-600 text-white font-medium py-3 px-6 rounded-md"
-          >
-            Tạo đề thi
-          </button>
-        </div>
-      </div>
-    </form>
-  </div>
-)}
+      )}
 
       {view === 'detail' && selectedExam && (
         <div className="max-w-4xl mx-auto bg-white rounded-md shadow p-6">
@@ -544,7 +594,6 @@ const ExamManagement = () => {
             <h3 className="text-lg font-semibold mb-4">Câu trả lời</h3>
             
             <div className="space-y-6">
-              {/* Mock student answers - replace with actual data */}
               <div className="border rounded-md p-4">
                 <div className="flex items-start">
                   <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-3">
@@ -557,7 +606,6 @@ const ExamManagement = () => {
                         <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center mr-2">A</div>
                         <span>Single Page Application</span>
                         <span className="ml-2 text-green-600">(Đúng)</span>
-                      </div>
                       <div className="flex items-center mt-1 text-gray-500">
                         <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mr-2">B</div>
                         <span>System Page Access</span>
@@ -575,7 +623,7 @@ const ExamManagement = () => {
                 </div>
               </div>
               
-              <div className="border rounded-md p-4">
+              <divapart className="border rounded-md p-4">
                 <div className="flex items-start">
                   <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-3">
                     Câu 2
@@ -604,11 +652,11 @@ const ExamManagement = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </divapart>
             </div>
           </div>
         </div>
-      )}
+      </div>)}
     </div>
   );
 };

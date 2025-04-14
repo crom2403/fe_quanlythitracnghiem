@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Search,
@@ -14,7 +15,9 @@ const QuestionManagement = () => {
   const [questions, setQuestions] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [chapters, setChapters] = useState([]);
-  const [filteredChapters, setFilteredChapters] = useState([]);
+  const [tableFilteredChapters, setTableFilteredChapters] = useState([]); // Cho bảng
+  const [formFilteredChapters, setFormFilteredChapters] = useState([]); 
+  const [loading, setLoading] = useState(false);
   const [difficultyLevels] = useState([
     { id: 1, name: 'Dễ', value: 'easy' },
     { id: 2, name: 'Trung bình', value: 'medium' },
@@ -40,30 +43,98 @@ const QuestionManagement = () => {
   useEffect(() => {
     const fetchData = async () => {
       await fetchSubjects();
-      await fetchChapters(); // Đảm bảo fetchChapters hoàn thành trước
-      await fetchQuestions(); // Sau đó mới gọi fetchQuestions
+      await fetchChapters();
+      await fetchQuestions();
     };
     fetchData();
   }, []);
 
+  // Cập nhật tableFilteredChapters cho bảng
   useEffect(() => {
-    if (selectedSubject) {
-      const subject = subjects.find((s) => s.name === selectedSubject);
-      if (subject) {
-        const filtered = chapters.filter((chapter) => chapter.subject_id === subject.id);
-        setFilteredChapters(filtered);
-        setSelectedChapter('');
-      }
-    } else {
-      setFilteredChapters(chapters);
-    }
-  }, [selectedSubject, chapters]);
+    const fetchChaptersBySubject = async () => {
+      if (selectedSubject) {
+        const subject = subjects.find((s) => s.name === selectedSubject);
+        if (subject) {
+          try {
+            let allChapters = [];
+            let page = 1;
+            let totalPages = 1;
 
+            while (page <= totalPages) {
+              const response = await axios.get(
+                `/chapter?subjectId=${subject.id}&page=${page}&limit=10`
+              );
+              const chapterData = response.data || [];
+              totalPages = response.data.totalPages || 1;
+              allChapters = [...allChapters, ...chapterData];
+              page++;
+            }
+
+            setTableFilteredChapters(allChapters);
+            setSelectedChapter('');
+          } catch (error) {
+            console.error('Lỗi khi lấy chương cho bảng:', error);
+            setTableFilteredChapters([]);
+          }
+        } else {
+          setTableFilteredChapters(chapters);
+        }
+      } else {
+        setTableFilteredChapters(chapters);
+      }
+    };
+
+    fetchChaptersBySubject();
+  }, [selectedSubject, subjects, chapters]);
+
+  // Cập nhật formFilteredChapters cho form
   useEffect(() => {
-    if (formData.subject) {
-      fetchChaptersBySubject();
-    }
-  }, [formData.subject]);
+    const fetchChaptersBySubject = async () => {
+      if (formData.subject) {
+        const subject = subjects.find((s) => s.name === formData.subject);
+        if (subject) {
+          try {
+            let allChapters = [];
+            let page = 1;
+            let totalPages = 1;
+
+            while (page <= totalPages) {
+              const response = await axios.get(
+                `/chapter?subjectId=${subject.id}&page=${page}&limit=10`
+              );
+              const chapterData = response.data || [];
+              totalPages = response.data.totalPages || 1;
+              allChapters = [...allChapters, ...chapterData];
+              page++;
+            }
+
+            setFormFilteredChapters(allChapters);
+            if (!allChapters.some((chapter) => chapter.name === formData.chapter)) {
+              setFormData((prev) => ({
+                ...prev,
+                chapter: allChapters.length > 0 ? allChapters[0].name : '',
+              }));
+            }
+          } catch (error) {
+            console.error('Lỗi khi lấy chương cho form:', error);
+            setFormFilteredChapters([]);
+            setFormData((prev) => ({ ...prev, chapter: '' }));
+          }
+        } else {
+          setFormFilteredChapters([]);
+          setFormData((prev) => ({ ...prev, chapter: '' }));
+        }
+      } else {
+        setFormFilteredChapters(chapters);
+        setFormData((prev) => ({
+          ...prev,
+          chapter: chapters.length > 0 ? chapters[0].name : '',
+        }));
+      }
+    };
+
+    fetchChaptersBySubject();
+  }, [formData.subject, subjects, chapters]);
 
   const fetchSubjects = async () => {
     try {
@@ -89,7 +160,6 @@ const QuestionManagement = () => {
       let page = 1;
       let totalPages = 1;
 
-      // Lặp qua tất cả các trang để lấy toàn bộ chương
       while (page <= totalPages) {
         const response = await axios.get(`/chapter?page=${page}&limit=10`);
         const chapterData = response.data.items || [];
@@ -99,7 +169,8 @@ const QuestionManagement = () => {
       }
 
       setChapters(allChapters);
-      setFilteredChapters(allChapters);
+      setTableFilteredChapters(allChapters);
+      setFormFilteredChapters(allChapters);
     } catch (error) {
       console.error('Lỗi khi lấy danh sách chương:', error);
       alert('Không thể tải danh sách chương.');
@@ -107,56 +178,12 @@ const QuestionManagement = () => {
     }
   };
 
-  const fetchChaptersBySubject = async () => {
-    if (!formData.subject) return;
-    const subject = subjects.find((s) => s.name === formData.subject);
-    if (!subject) return;
-
-    try {
-      let allChapters = [];
-      let page = 1;
-      let totalPages = 1;
-
-      while (page <= totalPages) {
-        const response = await axios.get(`/chapter?subjectId=${subject.id}&page=${page}&limit=10`);
-        const chapterData = response.data.items || [];
-        totalPages = response.data.totalPages || 1;
-        allChapters = [...allChapters, ...chapterData];
-        page++;
-      }
-
-      setFilteredChapters(allChapters);
-      if (allChapters.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          chapter: allChapters[0].name,
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          chapter: '',
-        }));
-      }
-    } catch (error) {
-      console.error('Lỗi khi lấy danh sách chương theo môn học:', error);
-      alert('Không thể tải danh sách chương theo môn học.');
-      setFilteredChapters([]);
-    }
-  };
-
   const fetchQuestions = async () => {
     try {
       const response = await axios.get('/question');
       const questionData = response.data.items || [];
-      // Ánh xạ chapter_name từ chapter_id
-      const updatedQuestions = questionData.map((q) => {
-        const chapter = chapters.find((c) => c.id === q.chapter_id);
-        return {
-          ...q,
-          chapter_name: chapter ? chapter.name : 'Chưa xác định',
-        };
-      });
-      setQuestions(updatedQuestions);
+      setQuestions(questionData);
+
     } catch (error) {
       console.error('Lỗi khi lấy danh sách câu hỏi:', error);
       alert('Không thể tải danh sách câu hỏi.');
@@ -195,7 +222,7 @@ const QuestionManagement = () => {
       options: ['', '', '', ''],
       correctAnswer: '',
       subject: subjects[0]?.name || '',
-      chapter: filteredChapters[0]?.name || chapters[0]?.name || '',
+      chapter: formFilteredChapters[0]?.name || '',
       difficulty: difficultyLevels[0]?.name || '',
     });
     setShowModal(true);
@@ -203,14 +230,71 @@ const QuestionManagement = () => {
 
   const handleEditQuestion = (question) => {
     setEditingQuestion(question);
-    setFormData({
-      question: question.content,
-      options: Array.isArray(question.answers) ? question.answers.map((ans) => ans.content) : ['', '', '', ''],
-      correctAnswer: Array.isArray(question.answers) ? question.answers.find((ans) => ans.is_correct)?.content || '' : '',
-      subject: question.subject_name,
-      chapter: question.chapter_name || filteredChapters[0]?.name || chapters[0]?.name || '',
-      difficulty: mapDifficultyToVietnamese(question.difficulty_level),
-    });
+    const subject = subjects.find((s) => s.name === question.subject_name);
+    const fetchChaptersForEdit = async () => {
+      if (subject) {
+        try {
+          let allChapters = [];
+          let page = 1;
+          let totalPages = 1;
+
+          while (page <= totalPages) {
+            const response = await axios.get(
+              `/chapter?subjectId=${subject.id}&page=${page}&limit=10`
+            );
+            const chapterData = response.data || [];
+            totalPages = response.data.totalPages || 1;
+            allChapters = [...allChapters, ...chapterData];
+            page++;
+          }
+
+          setFormFilteredChapters(allChapters);
+          setFormData({
+            question: question.content,
+            options: Array.isArray(question.answers)
+              ? question.answers.map((ans) => ans.content)
+              : ['', '', '', ''],
+            correctAnswer: Array.isArray(question.answers)
+              ? question.answers.find((ans) => ans.is_correct)?.content || ''
+              : '',
+            subject: question.subject_name,
+            chapter: question.chapter_name || allChapters[0]?.name || '',
+            difficulty: mapDifficultyToVietnamese(question.difficulty_level),
+          });
+        } catch (error) {
+          console.error('Lỗi khi lấy chương khi chỉnh sửa:', error);
+          setFormFilteredChapters([]);
+          setFormData({
+            question: question.content,
+            options: Array.isArray(question.answers)
+              ? question.answers.map((ans) => ans.content)
+              : ['', '', '', ''],
+            correctAnswer: Array.isArray(question.answers)
+              ? question.answers.find((ans) => ans.is_correct)?.content || ''
+              : '',
+            subject: question.subject_name,
+            chapter: '',
+            difficulty: mapDifficultyToVietnamese(question.difficulty_level),
+          });
+        }
+      } else {
+        setFormFilteredChapters(chapters);
+        setFormData({
+          question: question.content,
+          options: Array.isArray(question.answers)
+            ? question.answers.map((ans) => ans.content)
+            : ['', '', '', ''],
+          correctAnswer: Array.isArray(question.answers)
+            ? question.answers.find((ans) => ans.is_correct)?.content || ''
+            : '',
+          subject: question.subject_name,
+          chapter: chapters[0]?.name || '',
+          difficulty: mapDifficultyToVietnamese(question.difficulty_level),
+        });
+      }
+    };
+
+    fetchChaptersForEdit();
     setShowModal(true);
   };
 
@@ -245,6 +329,7 @@ const QuestionManagement = () => {
 
   const handleSaveQuestion = async () => {
     if (
+      
       formData.question.trim() === '' ||
       formData.options.some((opt) => opt.trim() === '') ||
       formData.correctAnswer.trim() === ''
@@ -259,7 +344,7 @@ const QuestionManagement = () => {
     }
 
     const subject = subjects.find((s) => s.name === formData.subject);
-    const chapter = filteredChapters.find((c) => c.name === formData.chapter);
+    const chapter = formFilteredChapters.find((c) => c.name === formData.chapter);
     if (!subject || !chapter) {
       alert('Vui lòng chọn môn học và chương hợp lệ.');
       return;
@@ -287,104 +372,6 @@ const QuestionManagement = () => {
       console.error('Lỗi khi lưu câu hỏi:', error);
       alert('Lưu câu hỏi thất bại.');
     }
-  };
-
-  const handleWordFileImport = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const arrayBuffer = event.target.result;
-
-      try {
-        const result = await mammoth.convertToHtml({ arrayBuffer });
-        const html = result.value;
-
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const paragraphs = doc.querySelectorAll('p');
-
-        const questionsData = [];
-        let currentQuestion = null;
-
-        for (let i = 0; i < paragraphs.length; i++) {
-          const text = paragraphs[i].textContent.trim();
-
-          if (text.startsWith('Câu hỏi:')) {
-            if (currentQuestion && currentQuestion.question) {
-              questionsData.push(currentQuestion);
-            }
-            currentQuestion = {
-              question: text.replace('Câu hỏi:', '').trim(),
-              options: [],
-              correctAnswer: '',
-              subject: subjects[0]?.name || '',
-              chapter: chapters[0]?.name || '',
-              difficulty: difficultyLevels[0]?.name || '',
-            };
-          } else if (text.match(/^[A-D]\.\s/) && currentQuestion) {
-            const option = text.replace(/^[A-D]\.\s/, '').trim();
-            currentQuestion.options.push(option);
-          } else if (text.startsWith('Đáp án:') && currentQuestion) {
-            const answer = text.replace('Đáp án:', '').trim();
-            if (answer.match(/^[A-D]$/)) {
-              const index = answer.charCodeAt(0) - 65;
-              if (currentQuestion.options[index]) {
-                currentQuestion.correctAnswer = currentQuestion.options[index];
-              }
-            }
-          } else if (text.startsWith('Môn học:') && currentQuestion) {
-            currentQuestion.subject = text.replace('Môn học:', '').trim();
-          } else if (text.startsWith('Chương:') && currentQuestion) {
-            currentQuestion.chapter = text.replace('Chương:', '').trim();
-          } else if (text.startsWith('Độ khó:') && currentQuestion) {
-            currentQuestion.difficulty = text.replace('Độ khó:', '').trim();
-          }
-        }
-
-        if (currentQuestion && currentQuestion.question) {
-          questionsData.push(currentQuestion);
-        }
-
-        if (questionsData.length > 0) {
-          for (const question of questionsData) {
-            const subject = subjects.find((s) => s.name === question.subject);
-            const chapter = chapters.find((c) => c.name === question.chapter && c.subject_id === subject?.id);
-            if (!subject || !chapter) {
-              console.warn(`Không tìm thấy môn học hoặc chương cho ${question.subject} - ${question.chapter}`);
-              continue;
-            }
-
-            const apiQuestion = {
-              chapter_id: chapter.id,
-              content: question.question,
-              difficulty_level: mapDifficultyToEnglish(question.difficulty),
-              answers: question.options.map((option) => ({
-                content: option,
-                is_correct: option === question.correctAnswer,
-              })),
-            };
-
-            try {
-              await axios.post('/question', apiQuestion);
-            } catch (error) {
-              console.error('Lỗi khi nhập câu hỏi từ file:', error);
-            }
-          }
-
-          fetchQuestions();
-          alert(`Đã nhập thành công ${questionsData.length} câu hỏi từ file Word!`);
-        } else {
-          alert('Không tìm thấy câu hỏi nào trong file. Vui lòng kiểm tra định dạng!');
-        }
-      } catch (error) {
-        alert('Lỗi khi đọc file Word: ' + error.message);
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
-    e.target.value = null;
   };
 
   return (
@@ -435,7 +422,7 @@ const QuestionManagement = () => {
               onChange={(e) => setSelectedChapter(e.target.value)}
             >
               <option value="">Tất cả chương</option>
-              {filteredChapters.map((chapter) => (
+              {tableFilteredChapters.map((chapter) => (
                 <option key={chapter.id} value={chapter.name}>
                   {chapter.name}
                 </option>
@@ -481,7 +468,7 @@ const QuestionManagement = () => {
               type="file"
               accept=".docx"
               className="hidden"
-              onChange={handleWordFileImport}
+              // onChange={handleWordFileImport}
             />
           </label>
         </div>
@@ -665,11 +652,17 @@ const QuestionManagement = () => {
                   onChange={handleFormChange}
                 >
                   <option value="">Chọn chương</option>
-                  {filteredChapters.map((chapter) => (
-                    <option key={chapter.id} value={chapter.name}>
-                      {chapter.name}
+                  {formFilteredChapters.length > 0 ? (
+                    formFilteredChapters.map((chapter) => (
+                      <option key={chapter.id} value={chapter.name}>
+                        {chapter.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      Không có chương nào
                     </option>
-                  ))}
+                  )}
                 </select>
               </div>
 
