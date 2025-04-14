@@ -7,21 +7,14 @@ import {
 } from '@heroicons/react/outline';
 import { useState, useEffect } from 'react';
 import { questions } from './QuestionService';
+import { subjectsResponse, subjectChaptersResponse } from '../subject/SubjectService';
 import { Radio } from '@mui/material';
 import CustomModal from '../../components/modal/CustomModal';
 import CustomButton from '../../components/button/CustomButton';
 import PaginatedTable from '../../components/pagination/PaginatedTable';
 
 // Danh sách môn học, chương, độ khó
-const subjects = [
-  'Tất cả',
-  'Cơ sở dữ liệu',
-  'Cấu trúc dữ liệu và giải thuật',
-  'Lập trình hướng đối tượng',
-  'Nhập môn lập trình',
-];
-const chapters = ['Tất cả', 'Chương 1', 'Chương 2', 'Chương 3'];
-const levels = ['Tất cả', 'Dễ', 'Trung bình', 'Khó'];
+const levels = ['Tất cả', 'Hard', 'Medium', 'Easy'];
 
 const Question = () => {
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -31,8 +24,8 @@ const Question = () => {
   const [answerContent, setAnswerContent] = useState(null);
   const [listAnswer, setListAnswer] = useState([]);
   const [questionContent, setQuestionContent] = useState('');
-  const [questionChapterIndex, setQuestionChapterIndex] = useState(0);
-  const [questionSubjectIndex, setQuestionSubjectIndex] = useState(0);
+  const [selectedChapterId, setselectedChapterId] = useState(0);
+  const [selectedSubjectId, setselectedSubjectId] = useState(0);
   const [questionCorrectAnswerIndex, setQuestionCorrectAnswerIndex] = useState(-1);
   const [selectedLevelIndex, setSelectedLevelIndex] = useState(0);
   const [expandedIndex, setExpandedIndex] = useState(null);
@@ -43,6 +36,8 @@ const Question = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [limit, setLimit] = useState(10);
+  const [subjects, setSubjects] = useState([{}]);
+  const [chapters, setChapters] = useState([]);
 
   const toggleExpand = (index, column) => {
     if (expandedIndex === index && expandedColumn === column) {
@@ -102,11 +97,11 @@ const Question = () => {
   };
 
   const handleSubjectChange = (event) => {
-    setQuestionSubjectIndex(parseInt(event.target.value));
+    setselectedSubjectId(event.target.value);
   };
 
   const handleChapterChange = (event) => {
-    setQuestionChapterIndex(parseInt(event.target.value));
+    setselectedChapterId(event.target.value);
   };
 
   const handleLevelChange = (event) => {
@@ -128,7 +123,23 @@ const Question = () => {
     }
     return questionContent;
   };
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      const subjectResult = await subjectsResponse(currentPage);
+      if (!subjectResult) {
+        console.error('Fetch subjects response failed!');
+      } else {
+        setSubjects(subjectResult.items);
+      }
+    }
+    fetchSubjects();
+  }, []);
+  useEffect(()=>{
+    const fetchChapters = async()=>{
+      const chaptersResult = subjectChaptersResponse();
 
+    }
+  })
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -163,12 +174,12 @@ const Question = () => {
                 <div className="flex flex-col">
                   <p className="text-blue-800">Môn học</p>
                   <select
-                    value={questionSubjectIndex}
+                    value={selectedSubjectId}
                     onChange={handleSubjectChange}
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                     id="subjects"
                   >
-                    {subjects.slice(1).map((subject, index) => (
+                    {subjects.map((subject, index) => (
                       <option key={index + 1} value={index + 1}>
                         {subject}
                       </option>
@@ -178,12 +189,12 @@ const Question = () => {
                 <div className="flex flex-col">
                   <p className="text-blue-800">Chương</p>
                   <select
-                    value={questionChapterIndex}
+                    value={selectedChapterId}
                     onChange={handleChapterChange}
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                     id="chapters"
                   >
-                    {chapters.slice(1).map((chapter, index) => (
+                    {chapters.map((chapter, index) => (
                       <option key={index + 1} value={index + 1}>
                         {chapter}
                       </option>
@@ -287,7 +298,7 @@ const Question = () => {
                 <p>Môn học</p>
                 <select
                   className="w-full border"
-                  value={questionSubjectIndex}
+                  value={selectedSubjectId}
                   onChange={handleSubjectChange}
                 >
                   {subjects.map((subject, index) => (
@@ -301,7 +312,7 @@ const Question = () => {
                 <p>Chương</p>
                 <select
                   className="w-full border"
-                  value={questionChapterIndex}
+                  value={selectedChapterId}
                   onChange={handleChapterChange}
                 >
                   {chapters.map((chapter, index) => (
@@ -361,7 +372,7 @@ const Question = () => {
                 <div className="flex flex-col">
                   <p className="text-blue-800">Môn học</p>
                   <select
-                    value={questionSubjectIndex}
+                    value={selectedSubjectId}
                     onChange={handleSubjectChange}
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                     id="subjects"
@@ -376,7 +387,7 @@ const Question = () => {
                 <div className="flex flex-col">
                   <p className="text-blue-800">Chương</p>
                   <select
-                    value={questionChapterIndex}
+                    value={selectedChapterId}
                     onChange={handleChapterChange}
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                     id="chapters"
@@ -447,24 +458,26 @@ const Question = () => {
           <select
             className="w-64 border-2 p-2 rounded-xl bg-blue-50 text-blue-800"
             name="sl-monhoc"
-            value={questionSubjectIndex}
+            value={selectedSubjectId}
             onChange={handleSubjectChange}
           >
-            {subjects.map((subject, index) => (
-              <option key={index} value={index}>
-                {subject}
+            <option value="all">Tất cả môn học</option>
+            {subjects.map((subject) => (
+              <option key={subject.id} value={subject.id}>
+                {subject.name}
               </option>
             ))}
           </select>
           <select
             className="w-64 border-2 p-2 rounded-xl bg-blue-50 text-blue-800"
             name="sl-chuong"
-            value={questionChapterIndex}
+            value={selectedChapterId}
             onChange={handleChapterChange}
           >
-            {chapters.map((chapter, index) => (
-              <option key={index} value={index}>
-                {chapter}
+            <option value="all">Tất cả chương</option>
+            {chapters.map((chapter) => (
+              <option key={chapter.id} value={chapter.id}>
+                {chapter.name}
               </option>
             ))}
           </select>
@@ -510,20 +523,18 @@ const Question = () => {
                 {questionsData.map((item, index) => (
                   <tr
                     key={item.id}
-                    className={`hover:bg-blue-100 even:bg-gray-50 transition-all duration-300 ${
-                      expandedIndex === index ? 'h-auto' : 'h-12'
-                    }`}
+                    className={`hover:bg-blue-100 even:bg-gray-50 transition-all duration-300 ${expandedIndex === index ? 'h-auto' : 'h-12'
+                      }`}
                   >
                     <td className="text-center py-3 text-blue-600 font-bold">
                       {(currentPage - 1) * limit + index + 1}
                     </td>
                     <td className="py-3 px-2">
                       <div
-                        className={`text-center ${
-                          expandedIndex === index && expandedColumn === 'content'
-                            ? 'whitespace-normal break-words'
-                            : 'overflow-hidden text-ellipsis whitespace-nowrap'
-                        }`}
+                        className={`text-center ${expandedIndex === index && expandedColumn === 'content'
+                          ? 'whitespace-normal break-words'
+                          : 'overflow-hidden text-ellipsis whitespace-nowrap'
+                          }`}
                         onClick={() => toggleExpand(index, 'content')}
                       >
                         {item.content}
@@ -531,11 +542,10 @@ const Question = () => {
                     </td>
                     <td className="py-3 px-2">
                       <div
-                        className={`text-center ${
-                          expandedIndex === index && expandedColumn === 'subject'
-                            ? 'whitespace-normal break-words'
-                            : 'overflow-hidden text-ellipsis whitespace-nowrap'
-                        }`}
+                        className={`text-center ${expandedIndex === index && expandedColumn === 'subject'
+                          ? 'whitespace-normal break-words'
+                          : 'overflow-hidden text-ellipsis whitespace-nowrap'
+                          }`}
                         onClick={() => toggleExpand(index, 'subject')}
                       >
                         {item.subject_name}

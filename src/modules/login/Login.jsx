@@ -1,5 +1,5 @@
 import '../../styles/loginStyle.css'; // Import file CSS
-import useUserStore from '../user/useUserStore';
+// import useUserStore from '../user/useUserStore';
 import { login } from './loginService';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ const Login = () => {
   const [mssv, setMssv] = useState('');
   const [pwd, setPwd] = useState('');
   const navigate = useNavigate();
-  const setUser = useUserStore((state) => state.setUser);
+  // const setUser = useUserStore((state) => state.setUser);
 
 
 

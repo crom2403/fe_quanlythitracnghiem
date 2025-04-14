@@ -420,9 +420,7 @@ const Subject = () => {
           )}
         </div>
         <div className="flex items-center space-x-8 mt-8 ml-8 mb-8">
-          <div className="min-w-96
-
- flex items-center space-x-2">
+          <div className="min-w-96 flex items-center space-x-2">
             <input
               type="search"
               placeholder="Nhập tên môn học..."
