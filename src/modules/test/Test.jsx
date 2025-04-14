@@ -120,17 +120,17 @@ export default function TestLayout() {
   const handleViewDetail = async (test) => {
     try {
       setFetchingDetail(true);
+      // Gọi API để lấy chi tiết đề thi
       const response = await axiosInstance.get(`/exam/${test.id}`);
       const examDetail = response.data;
-      console.log("Dữ liệu từ API:", examDetail);
-
+      console.log("Dữ liệu chi tiết đề thi:", examDetail);
+  
+      // Lưu chi tiết đề thi vào store
       setExamDetail(examDetail);
       setSelectedTest(test);
       setIsExamStarted(false);
-
-      if (attemptedTests.has(test.id)) {
-        navigate(`/dashboard/test/${test.id}/result`);
-      }
+  
+    
     } catch (err) {
       console.error("Lỗi khi lấy chi tiết đề thi:", err);
       setError("Không thể lấy chi tiết đề thi. Vui lòng thử lại sau.");
@@ -368,53 +368,55 @@ export default function TestLayout() {
               <p className="text-gray-600 text-center py-4">Không có đề thi phù hợp.</p>
             )}
             {filteredTests.map((test, index) => {
-              const status = getTestStatus(test.startTime, test.endTime, test.id);
-              const isAttempted = attemptedTests.has(test.id);
+  const status = getTestStatus(test.startTime, test.endTime, test.id);
+  const isAttempted = attemptedTests.has(test.id);
 
-              return (
-                <div
-                  key={`${test.id}-${index}`}
-                  className="bg-white border border-gray-200 rounded-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:border-blue-300 hover:scale-[1.02]"
-                >
-                  <div className="p-4 flex justify-between items-center">
-                    <div className="flex-1 pr-4">
-                      <h3 className="text-lg font-bold text-gray-800 mb-1">{test.title}</h3>
-                      <p className="text-sm text-gray-600 mb-1 flex items-center">
-                        <span className="mr-2">📚</span>
-                        {test.subject}
-                      </p>
-                      <p className="text-sm italic text-gray-500 flex items-center">
-                        <span className="mr-2">⏰</span>
-                        Diễn ra từ{" "}
-                        {test.startTime ? dayjs(test.startTime).format("DD/MM/YYYY HH:mm") : "Không xác định"} đến{" "}
-                        {test.endTime ? dayjs(test.endTime).format("DD/MM/YYYY HH:mm") : "Không xác định"}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span
-                        className={`font-bold ${
-                          status === "Chưa mở"
-                            ? "text-gray-500"
-                            : status === "Đang mở"
-                            ? "text-green-600"
-                            : status === "Đã đóng"
-                            ? "text-red-600"
-                            : "text-blue-600"
-                        }`}
-                      >
-                        {status}
-                      </span>
-                      <button
-                        onClick={() => handleViewDetail(test)}
-                        className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-                      >
-                        {isAttempted ? "Xem bài thi" : "Xem chi tiết"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+  return (
+    <div
+      key={`${test.id}-${index}`}
+      className="bg-white border border-gray-200 rounded-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:border-blue-300 hover:scale-[1.02]"
+    >
+      <div className="p-4 flex justify-between items-center">
+        <div className="flex-1 pr-4">
+          <h3 className="text-lg font-bold text-gray-800 mb-1">{test.title}</h3>
+          <p className="text-sm text-gray-600 mb-1 flex items-center">
+            <span className="mr-2">📚</span>
+            {test.subject}
+          </p>
+          <p className="text-sm italic text-gray-500 flex items-center">
+            <span className="mr-2">⏰</span>
+            Diễn ra từ{" "}
+            {test.startTime ? dayjs(test.startTime).format("DD/MM/YYYY HH:mm") : "Không xác định"} đến{" "}
+            {test.endTime ? dayjs(test.endTime).format("DD/MM/YYYY HH:mm") : "Không xác định"}
+          </p>
+        </div>
+        <div className="flex items-center space-x-4">
+          <span
+            className={`font-bold ${
+              status === "Chưa mở"
+                ? "text-gray-500"
+                : status === "Đang mở"
+                ? "text-green-600"
+                : status === "Đã đóng"
+                ? "text-red-600"
+                : "text-blue-600"
+            }`}
+          >
+            {status}
+          </span>
+          {status !== "Đã thi" && (
+            <button
+              onClick={() => handleViewDetail(test)}
+              className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            >
+              {isAttempted ? "Xem bài thi" : "Xem chi tiết"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+})}
           </div>
         </div>
       </div>

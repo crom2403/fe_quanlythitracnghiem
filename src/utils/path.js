@@ -9,6 +9,7 @@ const path = {
   ASSIGNMENT: '/dashboard/assignment',
   TEST: '/dashboard/test',
   EXAM: '/dashboard/exam',
+  ResultExam: '/dashboard/test/:testId/result',
   COURSEGROUP: '/dashboard/coursegroup',
   NOTIFICATION: '/dashboard/notification',
   GROUP: '/dashboard/group',
