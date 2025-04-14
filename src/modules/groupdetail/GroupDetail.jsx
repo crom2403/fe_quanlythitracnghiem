@@ -26,7 +26,7 @@ const GroupDetail = () => {
   const [activeModal, setActiveModal] = useState(null);
   const [activeTab, setActiveTab] = useState('manual');
   const [inviteCode, setInviteCode] = useState(null);
-  const [searchQuery, setSearchQuery] = useState(''); // Trạng thái cho ô tìm kiếm
+  const [searchQuery, setSearchQuery] = useState('');
   const [setActiveLink] = useState(path.EXAMPAPER);
   const [exams, setExams] = useState([]);
   const location = useLocation();
@@ -107,8 +107,11 @@ const GroupDetail = () => {
     }
   };
 
+  const setSelectedExam = (selectedExamId)=>{
+    sessionStorage.getItem('selectedExamId', selectedExamId);
+    console.log(`Selected exam id: '${selectedExamId}'`);
+  }
 
-  // Tải danh sách sinh viên
   const fetchStudents = async () => {
     try {
       const groupId = selectedGroupDetail.groupId;
@@ -144,17 +147,6 @@ const GroupDetail = () => {
     fetchStudents();
   }, [selectedGroupDetail?.groupId]);
 
-  const de = [
-    ['Đề tạo thủ công', '12:00:00 01/01/2025', '12:00:00 02/01/2025'],
-    ['Đề kiểm tra tuần 12', '12:00:00 01/09/2025', '12:00:00 02/01/2025'],
-    ['Đề kiểm tra tuần 2', '12:00:00 01/08/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-  ];
   const handleLinkClick = (link) => {
     setActiveLink(link);
   };
@@ -167,8 +159,6 @@ const GroupDetail = () => {
     setActiveModal(null);
   };
 
-
-  // Render nội dung theo tab
   const renderContent = () => {
     switch (activeTab) {
       case 'manual':
@@ -274,20 +264,20 @@ const GroupDetail = () => {
       case 'manual':
         return (
           <div className="max-h-[500px] overflow-y-auto">
-            {exams.map((item, index) => {
+            {exams.map((item) => {
               return (
                 <div
                   key={item.id}
                   className="w-full text-black space-y-2 mt-4 bg-blue-50 pl-4 min-h-25 pt-4 border-l-3 border-blue-900 rounded-2xl"
                 >
                   <div className="text-2xl text-blue-800">
-                    <Link to={path.FINISHEDTEST} onClick={() => handleLinkClick(path.FINISHEDTEST)}>{item.name}</Link>
+                    <Link to={path.FINISHEDTEST} state={{'selectedExamId':item.id}}>{item.name}</Link>
                   </div>
                   <div className="flex items-center space-x-1">
                     <ClockIcon className="w-4 h-4" />{' '}
-                    <p className="text-sm">
-                      Diễn ra từ {item.start_date} đến {item.end_date}
-                    </p>
+                    <div className='flex text-sm'>
+                    Diễn ra từ <p className='text-blue-800 ml-2 mr-2'>{item.start_time}</p> đến <p className='text-red-600 ml-2 mr-2'>{item.end_time}</p>
+                    </div>
                   </div>
                 </div>
               );

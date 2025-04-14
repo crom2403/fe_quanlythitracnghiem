@@ -19,7 +19,7 @@ const Login = () => {
       if (result != null) {
         sessionStorage.setItem('user-info', JSON.stringify(result))
         const userData = sessionStorage.getItem('user-info')
-        alert("Login successfull! accesstoken: "+ JSON.parse(userData).accessToken);
+        // alert("Login successfull! accesstoken: "+ JSON.parse(userData).accessToken);
         navigate('/dashboard');
       } else { alert("Login failed!") }
     } catch (err) {
