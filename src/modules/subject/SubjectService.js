@@ -10,6 +10,16 @@ export const subjectsResponse = async (page = 1) => {
     }
 }
 
+export const getAllSubjectResponse = async()=>{
+    try {
+        const response = await axiosInstance.get(`/subject?limit=1000`);
+        return response.data.items;
+    } catch (error) {
+        console.error("Call api /subject error!", error.message);
+        return error.message;
+    }
+}
+
 export const subjectChaptersResponse = async (subjectId) => {
     try {
         const response = await axiosInstance.get(`/chapter?subjectId=${subjectId}`);

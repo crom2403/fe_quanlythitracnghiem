@@ -37,7 +37,6 @@ const User = () => {
     password: '',
   });
 
-  // Lấy tất cả người dùng từ API
   const fetchUsers = async () => {
     try {
       setIsLoading(true);

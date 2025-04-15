@@ -11,6 +11,7 @@ import { GiNotebook } from 'react-icons/gi';
 import { Link, useNavigate } from 'react-router-dom';
 import path from '../../utils/path';
 import { useState, useEffect } from 'react';
+import { FaClipboardList } from 'react-icons/fa';
 
 const Sitebar = () => {
   const loggedIn = sessionStorage.getItem('user-info');
@@ -20,13 +21,13 @@ const Sitebar = () => {
 
   const handleLinkClick = (link) => {
     setActiveLink(link);
-    sessionStorage.setItem('activeLink', link); // Lưu link được chọn vào sessionStorage
+    sessionStorage.setItem('activeLink', link); 
   };
 
   const getLinkClass = (link) => {
     return activeLink === link
       ? 'bg-red-700 text-white'
-      : 'text-black hover:bg-red-700 hover:text-white';
+      : 'text-black hover:bg-blue-800 hover:text-white';
   };
 
   useEffect(() => {
@@ -95,8 +96,8 @@ const Sitebar = () => {
             onClick={() => handleLinkClick(path.EXAMPAPER)}
             className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.EXAMPAPER)}`}
           >
-            <CheckCircleIcon className={`h-6 w-6 mr-2 ${activeLink === path.EXAMPAPER ? 'text-white' : 'text-black hover:text-white'}`} />
-            Đã kiểm tra
+            <FaClipboardList className={`h-6 w-6 mr-2 ${activeLink === path.EXAMPAPER ? 'text-white' : 'text-black hover:text-white'}`} />
+            Đề kiểm tra
           </Link>
           <Link
             to={path.NOTIFICATION}
