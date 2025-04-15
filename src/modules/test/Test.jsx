@@ -29,12 +29,13 @@ export default function TestLayout() {
     try {
       const response = await axiosInstance.get(`/exam-attempt/check-student-can-take-exam/${examId}`);
       return {
-        canTake: response.data.success !== false,
-        hasAttempted: response.data.success === false,
+        canTake: response.data.success === true,
+        hasAttempted: response.data.success === false, // hoặc !response.data.success
       };
+
     } catch (error) {
       console.error("Lỗi khi kiểm tra trạng thái thi:", error);
-      return { canTake: false, hasAttempted: false };
+      return { canTake: true, hasAttempted: false };
     }
   };
 
@@ -44,24 +45,32 @@ export default function TestLayout() {
         setLoading(true);
         const response = await axiosInstance.get("/exam/get-all-exams-of-student");
         const apiTests = response.data;
-        console.log(apiTests);
 
         const mappedTests = apiTests.map((test) => ({
           id: test.id || 0,
-          courseGroupId: test.id || 0,
+          exam_id: test.exam_id,
           title: typeof test.name_exam === "string" && test.name_exam.trim() !== "" ? test.name_exam : "Không có tiêu đề",
           subject: typeof test.group_student_name === "string" ? test.group_student_name : "Không có môn học",
           startTime: dayjs(test.start_time, "DD/MM/YYYY, hh:mm A").toISOString(),
           endTime: dayjs(test.end_time, "DD/MM/YYYY, hh:mm A").toISOString(),
         }));
+        console.log(apiTests);
+        console.log("api đã map",mappedTests);
 
-        const attemptedSet = new Set();
-        for (const test of mappedTests) {
-          const { hasAttempted } = await checkStudentExamStatus(test.id);
-          if (hasAttempted) {
-            attemptedSet.add(test.id);
-          }
-        }
+        const statusChecks = await Promise.all(
+          mappedTests.map((test) =>
+            checkStudentExamStatus(test.exam_id).then(res => ({
+              exam_id: test.exam_id,
+              hasAttempted: res.hasAttempted,
+            }))
+          )
+        );
+        
+        const attemptedSet = new Set(
+          statusChecks
+            .filter((status) => status.hasAttempted)
+            .map((status) => status.exam_id)
+        );
 
         setTests(mappedTests);
         setAttemptedTests(attemptedSet);
@@ -85,8 +94,8 @@ export default function TestLayout() {
     }
   }, [testId, tests]);
 
-  const getTestStatus = (startTime, endTime, testId) => {
-    if (attemptedTests.has(testId)) {
+  const getTestStatus = (startTime, endTime, examId) => {
+    if (attemptedTests.has(examId)) {
       return "Đã thi";
     }
     if (!startTime || !endTime) {
@@ -111,7 +120,7 @@ export default function TestLayout() {
     const subject = typeof test.subject === "string" ? test.subject.toLowerCase() : "";
     const matchesSearch = title.includes(lowerSearch) || subject.includes(lowerSearch);
 
-    const status = getTestStatus(test.startTime, test.endTime, test.id);
+    const status = getTestStatus(test.startTime, test.endTime, test.exam_id);
     const matchesStatus = statusFilter === "all" || status === statusFilter;
 
     return matchesSearch && matchesStatus;
@@ -121,10 +130,10 @@ export default function TestLayout() {
     try {
       setFetchingDetail(true);
       // Gọi API để lấy chi tiết đề thi
-      const response = await axiosInstance.get(`/exam/${test.id}`);
+      const response = await axiosInstance.get(`/exam/${test.exam_id}`);
       const examDetail = response.data;
       console.log("Dữ liệu chi tiết đề thi:", examDetail);
-  
+      console.log("Id đề thi:", test.exam_id);
       // Lưu chi tiết đề thi vào store
       setExamDetail(examDetail);
       setSelectedTest(test);
@@ -151,7 +160,7 @@ export default function TestLayout() {
     }
 
     try {
-      const { canTake } = await checkStudentExamStatus(selectedTest.id);
+      const { canTake } = await checkStudentExamStatus(selectedTest.exam_id);
 
       if (!canTake) {
         setError("Bạn đã làm bài thi này rồi!");
@@ -176,9 +185,9 @@ export default function TestLayout() {
   };
 
   const renderTestDetail = (test) => {
-    const status = getTestStatus(test.startTime, test.endTime, test.id);
-    const isAttempted = attemptedTests.has(test.id);
-
+    const status = getTestStatus(test.startTime, test.endTime, test.exam_id);
+    const isAttempted = attemptedTests.has(test.exam_id);
+    
     if (isExamStarted && !isAttempted) {
       return <ExamComponent test={test} onExit={handleCloseDetail} />;
     }
@@ -368,12 +377,12 @@ export default function TestLayout() {
               <p className="text-gray-600 text-center py-4">Không có đề thi phù hợp.</p>
             )}
             {filteredTests.map((test, index) => {
-  const status = getTestStatus(test.startTime, test.endTime, test.id);
-  const isAttempted = attemptedTests.has(test.id);
+              const status = getTestStatus(test.startTime, test.endTime, test.exam_id);
+              const isAttempted = attemptedTests.has(test.exam_id);
 
   return (
     <div
-      key={`${test.id}-${index}`}
+      key={`${test.exam_id}-${index}`}
       className="bg-white border border-gray-200 rounded-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:border-blue-300 hover:scale-[1.02]"
     >
       <div className="p-4 flex justify-between items-center">

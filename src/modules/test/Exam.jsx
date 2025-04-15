@@ -25,16 +25,9 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
     allow_review_point: examDetail?.allow_review_point || false,
   });
 
+
   const prevExamDetailRef = useRef(null);
 
-  const shuffleArray = (array) => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-  };
 
   useEffect(() => {
     if (examDetail && examDetail.exam_questions && Array.isArray(examDetail.exam_questions)) {
@@ -44,57 +37,33 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
       }
       prevExamDetailRef.current = examDetail;
 
-      let mappedQuestions = examDetail.exam_questions.map((q) => {
-        if (!q.question || !q.question.content || !q.question.answers) {
-          console.warn(`Câu hỏi ID ${q.order_index} không có dữ liệu hợp lệ:`, q);
-          return null;
-        }
+      const mappedQuestions = examDetail.exam_questions
+        .map((q) => {
+          if (!q.question || !q.question.content || !q.question.answers) {
+            console.warn(`Câu hỏi ID ${q.order_index} không có dữ liệu hợp lệ:`, q);
+            return null;
+          }
 
-        let options = q.question.answers.map((ans, index) => ({
-          id: String.fromCharCode(65 + index),
-          text: ans.content,
-        }));
-
-        const correctAnswer = q.question.answers.find((ans) => ans.is_correct);
-        const correctAnswerId = correctAnswer
-          ? String.fromCharCode(65 + q.question.answers.indexOf(correctAnswer))
-          : null;
-
-        if (examDetail.is_shuffled_answer) {
-          const originalOptions = options.map((opt, index) => ({
-            ...opt,
-            originalIndex: index,
+          const options = q.question.answers.map((ans, index) => ({
+            id: String.fromCharCode(65 + index),
+            text: ans.content,
           }));
-          options = shuffleArray(originalOptions);
 
-          const correctOption = options.find(
-            (opt) => opt.originalIndex === q.question.answers.indexOf(correctAnswer)
-          );
-          const newCorrectAnswerId = correctOption ? correctOption.id : null;
+          const correctAnswer = q.question.answers.find((ans) => ans.is_correct);
+          const correctAnswerId = correctAnswer
+            ? String.fromCharCode(65 + q.question.answers.indexOf(correctAnswer))
+            : null;
 
           return {
             id: q.order_index,
             text: q.question.content,
-            options: options.map(({ originalIndex, ...rest }) => rest),
+            options,
             selectedAnswer: null,
-            correctAnswer: newCorrectAnswerId,
-            is_selected: false, // Ban đầu là false (boolean)
+            correctAnswer: correctAnswerId,
+            is_selected: false,
           };
-        }
-
-        return {
-          id: q.order_index,
-          text: q.question.content,
-          options,
-          selectedAnswer: null,
-          correctAnswer: correctAnswerId,
-          is_selected: false, // Ban đầu là false (boolean)
-        };
-      }).filter((q) => q !== null);
-
-      if (examDetail.is_shuffled_question) {
-        mappedQuestions = shuffleArray(mappedQuestions);
-      }
+        })
+        .filter((q) => q !== null);
 
       setQuestions(mappedQuestions);
       console.log("Danh sách câu hỏi:", mappedQuestions);
@@ -111,6 +80,7 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
     );
   }
 
+
   useEffect(() => {
     let timer;
     if (examState === "ongoing") {
@@ -118,7 +88,9 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
         setTimeRemaining((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            setShowConfirmSubmit(true);
+            setWarningMessage("⏰ Đã hết thời gian. Bài thi sẽ được nộp tự động.");
+            setShowWarning(true);
+            handleSubmitExam(); // ✅ Tự động nộp bài
             return 0;
           }
           return prev - 1;
@@ -127,6 +99,7 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
     }
     return () => clearInterval(timer);
   }, [examState]);
+  
 
   useEffect(() => {
     if (examState !== "ongoing") return;
@@ -193,8 +166,20 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
   const handleCloseConfirmSubmit = () => {
     setShowConfirmSubmit(false);
   };
-
+  const calculateScore = () => {
+    let count = 0;
+    questions.forEach((q) => {
+      if (q.selectedAnswer && q.selectedAnswer === q.correctAnswer) {
+        count++;
+      }
+    });
+    return count;
+  };
   const handleSubmitExam = async () => {
+   
+    const totalQuestions = questions.length;
+    const correctAnswers = calculateScore();
+    const scoreOutOf10 = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 10 : 0;
     setIsSubmitting(true);
 
     // Helper function để format ngày giờ
@@ -209,7 +194,6 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
 
     // Hàm lấy answer_id gốc từ selectedAnswer
     const getAnswerIdFromOption = (question, selectedAnswer) => {
-      // Nếu không có đáp án được chọn, trả về undefined thay vì null
       if (!selectedAnswer) return undefined;
 
       const originalQuestion = examDetail.exam_questions.find(
@@ -220,36 +204,32 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
         return undefined;
       }
 
-      // Lấy index của đáp án được chọn (A=0, B=1, etc.)
       const selectedIndex = selectedAnswer.charCodeAt(0) - 65;
       
-      // Lấy answer_id gốc từ danh sách đáp án
       const originalAnswer = originalQuestion.question.answers[selectedIndex];
       return originalAnswer?.id;
     };
-
-    // Chuẩn bị danh sách câu hỏi và đáp án
+    
     const prepareQuestions = () => {
       return questions.map((q) => {
         const answerId = getAnswerIdFromOption(q, q.selectedAnswer);
         
         return {
           question_id: q.id,
-          // Nếu không có đáp án được chọn, gửi null thay vì xóa trường answer_id
           anwer_id: answerId !== undefined ? answerId : null,
           is_selected: Boolean(q.selectedAnswer), // Đảm bảo giá trị boolean
         };
       });
     };
 
-    // Tạo dữ liệu gửi đi
     const submissionData = {
       exam_id: examDetail.id,
       tab_switch_count: tabSwitchCount,
       start_time: formatDateToISO(examDetail.start_time),
       end_time: formatDateToISO(examDetail.end_time),
+      point: Number(scoreOutOf10.toFixed(2)),
       test_time: testTimeInSeconds,
-      list_question: prepareQuestions().filter((q) => q.is_selected ===true), // Chỉ gửi những câu hỏi có đáp án được chọn
+      list_question: prepareQuestions().filter((q) => q.is_selected ===true),
     };
 
     console.log("Dữ liệu nộp bài chi tiết:", submissionData);
@@ -293,15 +273,6 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
     }
   };
 
-  const calculateScore = () => {
-    let count = 0;
-    questions.forEach((q) => {
-      if (q.selectedAnswer && q.selectedAnswer === q.correctAnswer) {
-        count++;
-      }
-    });
-    return count;
-  };
 
   const renderOngoingExam = () => {
     return (
@@ -535,14 +506,13 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
   const renderSubmittedExam = () => {
     const totalQuestions = questions.length;
     const correctAnswers = calculateScore();
+    const scoreOutOf10 = (correctAnswers / totalQuestions) * 10;
     const answeredCount = questions.filter((q) => q.selectedAnswer !== null).length;
     const wrongAnswers = answeredCount - correctAnswers;
     const skipped = totalQuestions - answeredCount;
     const totalTime = examDetail ? examDetail.duration_minutes * 60 : 600;
     const timeUsed = totalTime - timeRemaining;
     const timeUsedFormatted = formatTime(timeUsed);
-    const scoreOutOf10 = (correctAnswers / totalQuestions) * 10;
-
     if (!reviewSettings.allow_review && !reviewSettings.allow_review_point) {
       return null;
     }
