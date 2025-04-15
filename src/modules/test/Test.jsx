@@ -30,7 +30,7 @@ export default function TestLayout() {
       const response = await axiosInstance.get(`/exam-attempt/check-student-can-take-exam/${examId}`);
       return {
         canTake: response.data.success === true,
-        hasAttempted: response.data.success === false, // hoặc !response.data.success
+        hasAttempted: response.data.success === false, 
       };
 
     } catch (error) {
@@ -129,12 +129,10 @@ export default function TestLayout() {
   const handleViewDetail = async (test) => {
     try {
       setFetchingDetail(true);
-      // Gọi API để lấy chi tiết đề thi
       const response = await axiosInstance.get(`/exam/${test.exam_id}`);
       const examDetail = response.data;
       console.log("Dữ liệu chi tiết đề thi:", examDetail);
       console.log("Id đề thi:", test.exam_id);
-      // Lưu chi tiết đề thi vào store
       setExamDetail(examDetail);
       setSelectedTest(test);
       setIsExamStarted(false);

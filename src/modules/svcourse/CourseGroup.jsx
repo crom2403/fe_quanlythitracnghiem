@@ -18,7 +18,6 @@ const CourseGroups = () => {
   const [joinStatus, setJoinStatus] = useState({ show: false, success: false, message: '' });
   const navigate = useNavigate();
 
-  // Hàm parse chuỗi name để lấy thông tin semester, academic_year, subject
   const parseGroupName = (name) => {
     const parts = name.split(' - ');
     if (parts.length < 3) {

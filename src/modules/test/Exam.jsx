@@ -12,8 +12,8 @@ export default function ExamPage() {
   const [timeRemaining, setTimeRemaining] = useState(
     examDetail ? examDetail.duration_minutes * 60 : 600
   );
-  const [isSubmitting, setIsSubmitting] = useState(false); // Quản lý trạng thái loading
-const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị popup thử lại khi thất bại
+  const [isSubmitting, setIsSubmitting] = useState(false); 
+const [showRetryPopup, setShowRetryPopup] = useState(false); 
   const [examState, setExamState] = useState("ongoing");
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
@@ -90,7 +90,7 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
             clearInterval(timer);
             setWarningMessage("⏰ Đã hết thời gian. Bài thi sẽ được nộp tự động.");
             setShowWarning(true);
-            handleSubmitExam(); // ✅ Tự động nộp bài
+            handleSubmitExam(); 
             return 0;
           }
           return prev - 1;
@@ -153,7 +153,7 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === questionId
-          ? { ...q, selectedAnswer: answerId, is_selected: true } // Cập nhật is_selected thành true (boolean)
+          ? { ...q, selectedAnswer: answerId, is_selected: true } 
           : q
       )
     );
@@ -189,10 +189,8 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
       return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
     };
 
-    // Chuyển đổi thời gian từ phút sang giây
     const testTimeInSeconds = (examDetail.duration_minutes || 0) * 60;
 
-    // Hàm lấy answer_id gốc từ selectedAnswer
     const getAnswerIdFromOption = (question, selectedAnswer) => {
       if (!selectedAnswer) return undefined;
 
@@ -217,7 +215,7 @@ const [showRetryPopup, setShowRetryPopup] = useState(false); // Hiển thị pop
         return {
           question_id: q.id,
           anwer_id: answerId !== undefined ? answerId : null,
-          is_selected: Boolean(q.selectedAnswer), // Đảm bảo giá trị boolean
+          is_selected: Boolean(q.selectedAnswer), 
         };
       });
     };
