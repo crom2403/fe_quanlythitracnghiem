@@ -172,7 +172,6 @@ const Assignment = () => {
     };
 
     const isAssigned = (subject_id) => {
-      // Kiểm tra xem môn học có trong danh sách subjectsToAssign
       return subjectsToAssign.some((obj) => obj.subject_id === subject_id);
     };
 
