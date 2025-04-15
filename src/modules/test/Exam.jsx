@@ -68,7 +68,7 @@ const [showRetryPopup, setShowRetryPopup] = useState(false);
       setQuestions(mappedQuestions);
       console.log("Danh sách câu hỏi:", mappedQuestions);
     } else {
-      console.warn("Không có exam_questions trong examDetail:", examDetail);
+      console.warn("Không có câu hỏi:", examDetail);
     }
   }, [examDetail]);
 
