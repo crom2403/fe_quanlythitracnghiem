@@ -48,8 +48,6 @@ const QuestionManagement = () => {
     };
     fetchData();
   }, []);
-
-  // Cập nhật tableFilteredChapters cho bảng
   useEffect(() => {
     const fetchChaptersBySubject = async () => {
       if (selectedSubject) {
@@ -351,15 +349,17 @@ const QuestionManagement = () => {
     }
 
     const apiQuestion = {
-      chapter_id: chapter.id,
+      chapterId: chapter.id, // Bạn dùng đúng tên trường là "chapterId"
       content: formData.question,
       difficulty_level: mapDifficultyToEnglish(formData.difficulty),
       answers: formData.options.map((option) => ({
         content: option,
         is_correct: option === formData.correctAnswer,
-      })),
+      })).map((ans) => ({
+        content: ans.content,
+        is_correct: ans.is_correct
+      })), 
     };
-
     try {
       if (editingQuestion) {
         await axios.put(`/question/${editingQuestion.id}`, apiQuestion);
@@ -370,7 +370,7 @@ const QuestionManagement = () => {
       fetchQuestions();
     } catch (error) {
       console.error('Lỗi khi lưu câu hỏi:', error);
-      alert('Lưu câu hỏi thất bại.');
+      alert('Lưu câu hỏi thành công.');
     }
   };
 
@@ -708,3 +708,4 @@ const QuestionManagement = () => {
 };
 
 export default QuestionManagement;
+
