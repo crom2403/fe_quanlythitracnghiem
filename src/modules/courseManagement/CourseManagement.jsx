@@ -266,33 +266,6 @@ const CourseManagement = () => {
                     <td className="py-3 px-4 text-center">{course.practice}</td>
                     <td className="py-3 px-4">
                       <div className="flex justify-center space-x-2">
-                        {/* <button 
-                          className="p-1 text-blue-600 hover:text-blue-800 rounded-full bg-blue-100"
-                          title="Thông tin"
-                          onClick={() => handleSelectCourse(course)}
-                        >
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                          </svg>
-                        </button> */}
-                        {/* <button 
-                          className="p-1 text-blue-600 hover:text-blue-800 rounded-full bg-blue-100"
-                          onClick={() => handleEditCourse(course)}
-                          title="Sửa"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button 
-                          className="p-1 text-red-600 hover:text-red-800 rounded-full bg-red-100"
-                          onClick={() => handleDeleteCourse(course.id)}
-                          title="Xóa"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button> */}
                       </div>
                     </td>
                   </tr>
