@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Search,
@@ -9,15 +8,13 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import axios from "../../axiosConfig";
-import mammoth from 'mammoth';
 
 const QuestionManagement = () => {
   const [questions, setQuestions] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [chapters, setChapters] = useState([]);
-  const [tableFilteredChapters, setTableFilteredChapters] = useState([]); // Cho bảng
-  const [formFilteredChapters, setFormFilteredChapters] = useState([]); 
-  const [loading, setLoading] = useState(false);
+  const [tableFilteredChapters, setTableFilteredChapters] = useState([]);
+  const [formFilteredChapters, setFormFilteredChapters] = useState([]);
   const [difficultyLevels] = useState([
     { id: 1, name: 'Dễ', value: 'easy' },
     { id: 2, name: 'Trung bình', value: 'medium' },
@@ -27,9 +24,12 @@ const QuestionManagement = () => {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedChapter, setSelectedChapter] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
-
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [questionsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [formData, setFormData] = useState({
     question: '',
@@ -44,10 +44,15 @@ const QuestionManagement = () => {
     const fetchData = async () => {
       await fetchSubjects();
       await fetchChapters();
-      await fetchQuestions();
+      await fetchQuestions(1); // Tải trang đầu tiên
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    fetchQuestions(currentPage); // Tải lại khi currentPage thay đổi
+  }, [currentPage]);
+
   useEffect(() => {
     const fetchChaptersBySubject = async () => {
       if (selectedSubject) {
@@ -62,7 +67,7 @@ const QuestionManagement = () => {
               const response = await axios.get(
                 `/chapter?subjectId=${subject.id}&page=${page}&limit=10`
               );
-              const chapterData = response.data || [];
+              const chapterData = response.data.items || response.data || [];
               totalPages = response.data.totalPages || 1;
               allChapters = [...allChapters, ...chapterData];
               page++;
@@ -85,7 +90,6 @@ const QuestionManagement = () => {
     fetchChaptersBySubject();
   }, [selectedSubject, subjects, chapters]);
 
-  // Cập nhật formFilteredChapters cho form
   useEffect(() => {
     const fetchChaptersBySubject = async () => {
       if (formData.subject) {
@@ -100,7 +104,7 @@ const QuestionManagement = () => {
               const response = await axios.get(
                 `/chapter?subjectId=${subject.id}&page=${page}&limit=10`
               );
-              const chapterData = response.data || [];
+              const chapterData = response.data.items || response.data || [];
               totalPages = response.data.totalPages || 1;
               allChapters = [...allChapters, ...chapterData];
               page++;
@@ -137,7 +141,7 @@ const QuestionManagement = () => {
   const fetchSubjects = async () => {
     try {
       const response = await axios.get('/subject');
-      const subjectData = response.data.items || [];
+      const subjectData = response.data.items || response.data || [];
       setSubjects(subjectData);
       if (subjectData.length > 0 && !formData.subject) {
         setFormData((prev) => ({
@@ -160,7 +164,7 @@ const QuestionManagement = () => {
 
       while (page <= totalPages) {
         const response = await axios.get(`/chapter?page=${page}&limit=10`);
-        const chapterData = response.data.items || [];
+        const chapterData = response.data.items || response.data || [];
         totalPages = response.data.totalPages || 1;
         allChapters = [...allChapters, ...chapterData];
         page++;
@@ -176,16 +180,27 @@ const QuestionManagement = () => {
     }
   };
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = async (page = 1, limit = questionsPerPage) => {
     try {
-      const response = await axios.get('/question');
-      const questionData = response.data.items || [];
-      setQuestions(questionData);
+      const response = await axios.get('/question?limit=1000&page=1');
 
+      // const response = await axios.get(`/question?page=${page}&limit=${limit}`);
+      const questionData = response.data.items || response.data || [];
+      const totalItems = response.data.totalItems || questionData.length;
+      setQuestions(questionData);
+      setTotalItems(totalItems);
+      setTotalPages(Math.ceil(totalItems / limit));
+      console.log('Trang hiện tại:', page);
+      console.log('Danh sách câu hỏi:', questionData);
+      console.log('Số lượng câu hỏi:', questionData.length);
+      console.log('Tổng số câu hỏi:', totalItems);
+      console.log('Tổng số trang:', Math.ceil(totalItems / limit));
     } catch (error) {
       console.error('Lỗi khi lấy danh sách câu hỏi:', error);
       alert('Không thể tải danh sách câu hỏi.');
       setQuestions([]);
+      setTotalPages(1);
+      setTotalItems(0);
     }
   };
 
@@ -213,17 +228,47 @@ const QuestionManagement = () => {
     return matchesSearch && matchesSubject && matchesChapter && matchesDifficulty;
   });
 
-  const handleAddQuestion = () => {
-    setEditingQuestion(null);
-    setFormData({
-      question: '',
-      options: ['', '', '', ''],
-      correctAnswer: '',
-      subject: subjects[0]?.name || '',
-      chapter: formFilteredChapters[0]?.name || '',
-      difficulty: difficultyLevels[0]?.name || '',
-    });
-    setShowModal(true);
+  useEffect(() => {
+    console.log('Số lượng câu hỏi sau lọc:', filteredQuestions.length);
+    const newTotalPages = Math.ceil(totalItems / questionsPerPage);
+    setTotalPages(newTotalPages);
+    if (currentPage > newTotalPages && newTotalPages > 0) {
+      setCurrentPage(newTotalPages); // Điều chỉnh currentPage nếu vượt quá
+    }
+  }, [searchTerm, selectedSubject, selectedChapter, selectedDifficulty, totalItems]);
+
+  const indexOfLastQuestion = currentPage * questionsPerPage;
+  const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
+  const currentQuestions = filteredQuestions.slice(
+    indexOfFirstQuestion,
+    indexOfLastQuestion
+  );
+
+  const getPageNumbers = () => {
+    const maxPagesToShow = 5;
+    const pages = [];
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+
+    if (startPage > 1) {
+      pages.push(1);
+      if (startPage > 2) pages.push('...');
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) pages.push('...');
+      pages.push(totalPages);
+    }
+
+    return pages;
   };
 
   const handleEditQuestion = (question) => {
@@ -240,7 +285,7 @@ const QuestionManagement = () => {
             const response = await axios.get(
               `/chapter?subjectId=${subject.id}&page=${page}&limit=10`
             );
-            const chapterData = response.data || [];
+            const chapterData = response.data.items || response.data || [];
             totalPages = response.data.totalPages || 1;
             allChapters = [...allChapters, ...chapterData];
             page++;
@@ -300,7 +345,7 @@ const QuestionManagement = () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
       try {
         await axios.delete(`/question/${id}`);
-        fetchQuestions();
+        fetchQuestions(currentPage);
       } catch (error) {
         console.error('Lỗi khi xóa câu hỏi:', error);
         alert('Xóa câu hỏi thất bại.');
@@ -327,7 +372,6 @@ const QuestionManagement = () => {
 
   const handleSaveQuestion = async () => {
     if (
-      
       formData.question.trim() === '' ||
       formData.options.some((opt) => opt.trim() === '') ||
       formData.correctAnswer.trim() === ''
@@ -349,17 +393,15 @@ const QuestionManagement = () => {
     }
 
     const apiQuestion = {
-      chapterId: chapter.id, // Bạn dùng đúng tên trường là "chapterId"
-      content: formData.question,
+      chapterId: chapter.id,
+      content: String(formData.question),
       difficulty_level: mapDifficultyToEnglish(formData.difficulty),
       answers: formData.options.map((option) => ({
-        content: option,
+        content: String(option),
         is_correct: option === formData.correctAnswer,
-      })).map((ans) => ({
-        content: ans.content,
-        is_correct: ans.is_correct
-      })), 
+      })),
     };
+
     try {
       if (editingQuestion) {
         await axios.put(`/question/${editingQuestion.id}`, apiQuestion);
@@ -367,10 +409,10 @@ const QuestionManagement = () => {
         await axios.post('/question', apiQuestion);
       }
       setShowModal(false);
-      fetchQuestions();
+      fetchQuestions(currentPage);
     } catch (error) {
       console.error('Lỗi khi lưu câu hỏi:', error);
-      alert('Lưu câu hỏi thành công.');
+      alert('Lưu câu hỏi thất bại. Vui lòng thử lại.');
     }
   };
 
@@ -389,10 +431,7 @@ const QuestionManagement = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Search
-            className="absolute right-3 top-2.5 text-gray-400"
-            size={20}
-          />
+          {Search && <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -409,10 +448,7 @@ const QuestionManagement = () => {
                 </option>
               ))}
             </select>
-            <ChevronDown
-              className="absolute right-2 top-2.5 text-gray-500"
-              size={16}
-            />
+            {ChevronDown && <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />}
           </div>
 
           <div className="relative">
@@ -428,10 +464,7 @@ const QuestionManagement = () => {
                 </option>
               ))}
             </select>
-            <ChevronDown
-              className="absolute right-2 top-2.5 text-gray-500"
-              size={16}
-            />
+            {ChevronDown && <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />}
           </div>
 
           <div className="relative">
@@ -447,28 +480,35 @@ const QuestionManagement = () => {
                 </option>
               ))}
             </select>
-            <ChevronDown
-              className="absolute right-2 top-2.5 text-gray-500"
-              size={16}
-            />
+            {ChevronDown && <ChevronDown className="absolute right-2 top-2.5 text-gray-500" size={16} />}
           </div>
         </div>
 
         <div className="flex gap-2">
           <button
-            onClick={handleAddQuestion}
+            onClick={() => {
+              setEditingQuestion(null);
+              setFormData({
+                question: '',
+                options: ['', '', '', ''],
+                correctAnswer: '',
+                subject: subjects[0]?.name || '',
+                chapter: formFilteredChapters[0]?.name || '',
+                difficulty: difficultyLevels[0]?.name || '',
+              });
+              setShowModal(true);
+            }}
             className="flex items-center gap-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
           >
-            <Plus size={18} /> Thêm
+            {Plus && <Plus size={18} />} Thêm
           </button>
 
           <label className="flex items-center gap-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors cursor-pointer">
-            <Upload size={18} /> Nhập File
+            {Upload && <Upload size={18} />} Nhập File
             <input
               type="file"
               accept=".docx"
               className="hidden"
-              // onChange={handleWordFileImport}
             />
           </label>
         </div>
@@ -499,11 +539,11 @@ const QuestionManagement = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredQuestions.length > 0 ? (
-              filteredQuestions.map((q, index) => (
+            {currentQuestions.length > 0 ? (
+              currentQuestions.map((q, index) => (
                 <tr key={q.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {index + 1}
+                    {(currentPage - 1) * questionsPerPage + index + 1}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {q.content}
@@ -533,13 +573,13 @@ const QuestionManagement = () => {
                       onClick={() => handleEditQuestion(q)}
                       className="text-indigo-600 hover:text-indigo-900 mr-3"
                     >
-                      <Edit size={18} />
+                      {Edit && <Edit size={18} />}
                     </button>
                     <button
                       onClick={() => handleDeleteQuestion(q.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      <Trash2 size={18} />
+                      {Trash2 && <Trash2 size={18} />}
                     </button>
                   </td>
                 </tr>
@@ -556,6 +596,59 @@ const QuestionManagement = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex justify-between items-center mt-6">
+        <div className="text-sm text-gray-600">
+          Hiển thị {(currentPage - 1) * questionsPerPage + 1} -{' '}
+          {Math.min(currentPage * questionsPerPage, totalItems)} trong số{' '}
+          {totalItems} câu hỏi
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              currentPage === 1
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+            }`}
+          >
+            Trước
+          </button>
+          {getPageNumbers().map((page, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                if (typeof page === 'number') {
+                  console.log('Chuyển đến trang:', page);
+                  setCurrentPage(page);
+                }
+              }}
+              disabled={page === '...' || page === currentPage}
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                page === currentPage
+                  ? 'bg-blue-500 text-white'
+                  : page === '...'
+                  ? 'bg-white text-gray-500 cursor-default'
+                  : 'bg-white text-gray-700 hover:bg-blue-100'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+              currentPage === totalPages
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+            }`}
+          >
+            Sau
+          </button>
+        </div>
       </div>
 
       {showModal && (
@@ -708,4 +801,3 @@ const QuestionManagement = () => {
 };
 
 export default QuestionManagement;
-
