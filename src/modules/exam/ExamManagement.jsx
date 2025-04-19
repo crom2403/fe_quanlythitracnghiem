@@ -8,6 +8,7 @@ const ExamManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState('list');
   const [selectedExam, setSelectedExam] = useState(null);
+  const [examPerTest, setExamPerTest] = useState([]); //
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -17,7 +18,7 @@ const ExamManagement = () => {
   const [levelSelect, setLevelSelect] = useState(""); // Độ khó câu hỏi
   const [chapterSelect, setChapterSelect] = useState(""); // Chương câu hỏi
   const [listChapters, setListChapters] = useState([]); // Danh sách chương câu hỏi
-  
+  const [answerPerExam, setAnswerPerExam] = useState([]); // Dữ liệu câu trả lời của sinh viên
   // State cho danh sách câu hỏi từ API
   const [questions, setQuestions] = useState([]);
   const [selectedQuestions, setSelectedQuestions] = useState(() => {
@@ -120,40 +121,105 @@ const ExamManagement = () => {
     };
     fetchChapters();
   }, [view, selectStudyGroup, listStudyGroups]);
+    // Lấy danh sách đề thi
+    useEffect(() => {
+      const fetchExamsPerTest = async (examId) => {
+        setLoading(true);
+        try {
+          const response = await axios.get(`https://inevitable-justinn-tsondev-41d66d2f.koyeb.app/api/v1/exam-attempt/get-all-exam-attempt-of-exam/${examId}`);
+          const mappedExamsPerTest = response.data.map(exam => ({
+            id: exam.id,
+            title: exam.name,
+            course: exam.group_student_name,
+            group: '',
+            switch: exam.tab_switch_count,
+            test_time: exam.test_time,
+            startDate: exam.start_time,
+            endDate: exam.end_time,
+            status: 'closed',
+            user: exam.user ? {
+              id_stu: exam.user.id,
+              student_code: exam.user.student_code,
+              email: exam.user.email,
+              fullname: exam.user.fullname
+            } : null,
+            completedDate: exam.completed_date || "Chưa nộp", // Lấy thời gian nộp từ API
+            score: exam.score || 0, // Điểm số
+            questions: []
+          }));
+          setExamPerTest(mappedExamsPerTest);
+        } catch (error) {
+          setErrorMessage('Không thể tải danh sách đề thi. Vui lòng thử lại sau.');
+          console.error('Error fetching exams:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+    
+      // Example: Call fetchExamsPerTest with a specific exam ID
+      if (selectedExam?.id) {
+        fetchExamsPerTest(selectedExam.id);
+      }
+    }, [selectedExam]);
 
-  // Lấy danh sách đề thi
-  useEffect(() => {
-    const fetchExams = async () => {
+
+    useEffect(() => {
+      if (examPerTest && examPerTest.length > 0) {
+        console.log("Danh sách đề thi đã load:", examPerTest);
+      }
+    }, [examPerTest]);
+    // Lấy danh sách bai thi
+    useEffect(() => {
+      const fetchExams = async () => {
+        setLoading(true);
+        try {
+          const response = await axios.get('https://inevitable-justinn-tsondev-41d66d2f.koyeb.app/api/v1/exam/get-all-by-teacher');
+          const mappedExams = response.data.map(exam => ({
+            id: exam.id,
+            title: exam.name,
+            course: exam.group_student_name,
+            group: '',
+            startDate: exam.start_time,
+            endDate: exam.end_time,
+            status: 'closed',
+            students: {
+              total: 0,
+              completed: 0,
+              notStarted: 0,
+              averageScore: 0
+            },
+            questions: []
+          }));
+          setExams(mappedExams);
+        } catch (error) {
+          setErrorMessage('Không thể tải danh sách đề thi. Vui lòng thử lại sau.');
+          console.error('Error fetching exams:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchExams();
+    }, []);
+
+    //danh sach chi tiet answer
+    const fetchAnswerPerExam = async (examAttemptID) => {
       setLoading(true);
       try {
-        const response = await axios.get('https://inevitable-justinn-tsondev-41d66d2f.koyeb.app/api/v1/exam/get-all-by-teacher');
-        const mappedExams = response.data.map(exam => ({
-          id: exam.id,
-          title: exam.name,
-          course: exam.group_student_name,
-          group: '',
-          startDate: exam.start_time,
-          endDate: exam.end_time,
-          status: 'closed',
-          students: {
-            total: 0,
-            completed: 0,
-            notStarted: 0,
-            averageScore: 0
-          },
-          questions: []
-        }));
-        setExams(mappedExams);
+        const response = await axios.get(`https://inevitable-justinn-tsondev-41d66d2f.koyeb.app/api/v1/exam-attempt/get-detail-of-exam-attempt/${examAttemptID}`);
+        const { listQuestion, listAnswerStudentSelected } = response.data;
+    
+        // In ra console để kiểm tra dữ liệu trả về
+        console.log("listQuestion:", listQuestion);
+        console.log("listAnswerStudentSelected:", listAnswerStudentSelected);
+    
+        // Nếu cần xử lý thêm, bạn có thể làm ở đây
       } catch (error) {
-        setErrorMessage('Không thể tải danh sách đề thi. Vui lòng thử lại sau.');
-        console.error('Error fetching exams:', error);
+        console.error("Error fetching answer details:", error);
+        setErrorMessage("Không thể tải chi tiết câu trả lời. Vui lòng thử lại sau.");
       } finally {
         setLoading(false);
       }
     };
-    fetchExams();
-  }, []);
-
   // Lấy danh sách câu hỏi từ API khi vào view 'add-question'
   useEffect(() => {
     if (view !== 'add-question') return;
@@ -324,7 +390,6 @@ const ExamManagement = () => {
     );
     setQuestions(updatedQuestions);
   };
-
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       {view === 'list' && (
@@ -652,24 +717,31 @@ const ExamManagement = () => {
                     <th className="py-3 px-4 text-left">Họ tên</th>
                     <th className="py-3 px-4 text-left">Thời gian nộp</th>
                     <th className="py-3 px-4 text-left">Điểm số</th>
+                    <th className="py-3 px-4 text-left">Lan chuyen tab</th>
                     <th className="py-3 px-4 text-left">Chi tiết</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {mockStudentExams.map((student, index) => (
-                    <tr key={student.studentId} className="border-t">
-                      <td className="py-3 px-4">{index + 1}</td>
-                      <td className="py-3 px-4">{student.name}</td>
-                      <td className="py-3 px-4">{student.completedDate}</td>
-                      <td className="py-3 px-4">{student.score}</td>
-                      <td className="py-3 px-4">
-                        <button
-                          onClick={() => handleViewStudentExam(student)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          Xem chi tiết
-                        </button>
-                      </td>
+                {examPerTest.map((student, index) => (
+    <tr key={student.id_stu} className="border-t">
+      <td className="py-3 px-4 text-center">{index + 1}</td> {/* STT */}
+      <td className="py-3 px-4">{student.user?.fullname || "N/A"}</td> {/* Họ tên */}
+      <td className="py-3 px-4">{student.score > 0 ? "Da nộp" : "chua nop"}</td> {/* Thời gian nộp */}
+      <td className="py-3 px-4 text-center">{student.score || "0"}</td> {/* Điểm số */}
+      <td className="py-3 px-4 text-center">{student.switch || "0"}</td> {/* Điểm số */}
+
+
+      <td className="py-3 px-4">
+  <button
+    onClick={() => {
+      fetchAnswerPerExam(student.id_stu); // Gọi API với `id_stu` của sinh viên
+      setView("studentDetail"); // Chuyển sang chế độ xem chi tiết
+    }}
+    className="text-blue-600 hover:text-blue-800"
+  >
+    Xem chi tiết
+  </button>
+</td>
                     </tr>
                   ))}
                 </tbody>
@@ -679,101 +751,76 @@ const ExamManagement = () => {
         </div>
       )}
 
-      {view === 'studentDetail' && selectedStudent && (
-        <div className="max-w-4xl mx-auto bg-white rounded-md shadow p-6">
-          <div className="flex items-center mb-6">
-            <button
-              onClick={handleBackToDetail}
-              className="mr-4 text-gray-600 hover:text-gray-800"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <h2 className="text-2xl font-bold">Chi tiết bài làm</h2>
-          </div>
+{view === "studentDetail" && selectedStudent && (
+  <div className="max-w-4xl mx-auto bg-white rounded-md shadow p-6">
+    <div className="flex items-center mb-6">
+      <button
+        onClick={handleBackToDetail}
+        className="mr-4 text-gray-600 hover:text-gray-800"
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </button>
+      <h2 className="text-2xl font-bold">Chi tiết bài làm</h2>
+    </div>
 
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold">{selectedExam.title}</h3>
-            <p className="mt-2 font-medium">Sinh viên: {selectedStudent.name}</p>
-            <div className="mt-4 flex space-x-4">
-              <div>
-                <span className="text-gray-600">Thời gian nộp:</span>
-                <span className="ml-2 font-medium">{selectedStudent.completedDate}</span>
+    <div className="mb-6">
+      <h3 className="text-xl font-semibold">{selectedExam.title}</h3>
+      <p className="mt-2 font-medium">Sinh viên: {selectedStudent.user?.fullname}</p>
+    </div>
+
+    <div>
+      <h3 className="text-lg font-semibold mb-4">Danh sách câu hỏi</h3>
+      <div className="space-y-6">
+        {answerPerExam.map((question) => (
+          <div key={question.questionId} className="border rounded-md p-4">
+            <div className="flex items-start">
+              <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-3">
+                Câu {question.orderIndex}
               </div>
               <div>
-                <span className="text-gray-600">Điểm số:</span>
-                <span className="ml-2 font-medium">{selectedStudent.score}</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Câu trả lời</h3>
-
-            <div className="space-y-6">
-              <div className="border rounded-md p-4">
-                <div className="flex items-start">
-                  <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-3">
-                    Câu 1
-                  </div>
-                  <div>
-                    <p className="font-medium">Thuật ngữ SPA trong phát triển web là viết tắt của?</p>
-                    <div className="mt-2 ml-4">
-                      <div className="flex items-center mt-1 text-gray-800">
-                        <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center mr-2">A</div>
-                        <span>Single Page Application</span>
+                <p className="font-medium">{question.questionContent}</p>
+                <div className="mt-2 ml-4">
+                  {question.answers.map((answer) => (
+                    <div
+                      key={answer.id}
+                      className={`flex items-center mt-1 ${
+                        answer.isCorrect
+                          ? "text-green-800"
+                          : question.selectedAnswers.includes(answer.id)
+                          ? "text-red-800"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${
+                          answer.isCorrect
+                            ? "bg-green-500 text-white"
+                            : question.selectedAnswers.includes(answer.id)
+                            ? "bg-red-200"
+                            : "bg-gray-200"
+                        }`}
+                      >
+                        {String.fromCharCode(65 + answer.orderIndex)} {/* A, B, C, D */}
+                      </div>
+                      <span>{answer.content}</span>
+                      {answer.isCorrect && (
                         <span className="ml-2 text-green-600">(Đúng)</span>
-                      </div>
-                      <div className="flex items-center mt-1 text-gray-500">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mr-2">B</div>
-                        <span>System Page Access</span>
-                      </div>
-                      <div className="flex items-center mt-1 text-gray-500">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mr-2">C</div>
-                        <span>Service Provider Application</span>
-                      </div>
-                      <div className="flex items-center mt-1 text-gray-500">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mr-2">D</div>
-                        <span>Server Process Application</span>
-                      </div>
+                      )}
+                      {question.selectedAnswers.includes(answer.id) &&
+                        !answer.isCorrect && (
+                          <span className="ml-2 text-red-600">(Đã chọn - Sai)</span>
+                        )}
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border rounded-md p-4">
-                <div className="flex items-start">
-                  <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-3">
-                    Câu 2
-                  </div>
-                  <div>
-                    <p className="font-medium">Framework JavaScript nào không thuộc nhóm SPA?</p>
-                    <div className="mt-2 ml-4">
-                      <div className="flex items-center mt-1 text-gray-500">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mr-2">A</div>
-                        <span>React</span>
-                      </div>
-                      <div className="flex items-center mt-1 text-gray-500">
-                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mr-2">B</div>
-                        <span>Angular</span>
-                      </div>
-                      <div className="flex items-center mt-1 text-red-800">
-                        <div className="w-5 h-5 rounded-full bg-red-200 flex items-center justify-center mr-2">C</div>
-                        <span>jQuery</span>
-                        <span className="ml-2 text-red-600">(Đã chọn - Sai)</span>
-                      </div>
-                      <div className="flex items-center mt-1 text-gray-500">
-                        <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center mr-2">D</div>
-                        <span>Vue</span>
-                        <span className="ml-2 text-green-600">(Đúng)</span>
-                      </div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
       {view === 'add-question' && (
         <div className="flex h-screen bg-gray-100 -mx-4">
