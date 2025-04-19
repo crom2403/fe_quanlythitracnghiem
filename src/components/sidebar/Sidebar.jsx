@@ -133,8 +133,8 @@ const Sitebar = () => {
             Nhóm học phần
           </Link>
           <Link
-            to={path.QUESTION}
-            onClick={() => handleLinkClick(path.QUESTION)}
+            to={path.Question123}
+            onClick={() => handleLinkClick(path.Question123)}
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
             <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
@@ -144,7 +144,7 @@ const Sitebar = () => {
             href="#"
             className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
           >
-            <UserIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Thông tin cá nhân
           </a>
           
@@ -200,15 +200,11 @@ const Sitebar = () => {
 
         <div className="flex flex-col p-4 space-y-2">
           <Link
-
-            to={path.Course}
-            onClick={() => handleLinkClick(path.Course)}
-            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.Course)}`}
             to={path.COURSEGROUP}
             onClick={() => handleLinkClick(path.COURSEGROUP)}
             className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.COURSEGROUP)}`}
           >
-            <UsersIcon className={`h-6 w-6 mr-2 ${activeLink === path.Course ? 'text-white' : 'text-black hover:text-white'}`} />
+            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Nhóm học phần
           </Link>
           <Link
@@ -216,9 +212,14 @@ const Sitebar = () => {
             onClick={() => handleLinkClick(path.TEST)}
             className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.TEST)}`}
           >
-            <QuestionMarkCircleIcon className={`h-6 w-6 mr-2 ${activeLink === path.TEST ? 'text-white' : 'text-black hover:text-white'}`} />
+            {/* lớp transform cho phép các hiệu ứng biến đổi như scale, rotate, translate,...*/}
+            {/* transition-all áp dụng hiệu ứng chuyển tiếp cho tất cả các thuộc tính có thể thay đổi, tạo hiệu ứng mượt mà */}
+            <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Bài kiểm tra
           </Link>
+
+          
+         
         </div>
       </div>
     );
