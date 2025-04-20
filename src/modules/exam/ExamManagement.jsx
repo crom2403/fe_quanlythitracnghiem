@@ -4,6 +4,8 @@ import { Search, BookOpen, HelpCircle, Clock, Plus, Eye, Edit, Trash2, Calendar,
 import axios from "../../axiosConfig";
 
 const ExamManagement = () => {
+
+const [selectedExamAttemptId, setSelectedExamAttemptId] = useState(null);
   const [exams, setExams] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState('list');
@@ -20,6 +22,8 @@ const ExamManagement = () => {
   const [listChapters, setListChapters] = useState([]); // Danh sách chương câu hỏi
   const [answerPerExam, setAnswerPerExam] = useState([]); // Dữ liệu câu trả lời của sinh viên
   // State cho danh sách câu hỏi từ API
+  const [answers, setAnswers] = useState([]); // Lưu danh sách câu trả lời
+const [selectedAnswers, setSelectedAnswers] = useState([]); // Lưu danh sách câu trả lời đã chọn
   const [questions, setQuestions] = useState([]);
   const [selectedQuestions, setSelectedQuestions] = useState(() => {
     // Đọc từ localStorage khi khởi tạo
@@ -127,27 +131,85 @@ const ExamManagement = () => {
         setLoading(true);
         try {
           const response = await axios.get(`https://inevitable-justinn-tsondev-41d66d2f.koyeb.app/api/v1/exam-attempt/get-all-exam-attempt-of-exam/${examId}`);
-          const mappedExamsPerTest = response.data.map(exam => ({
-            id: exam.id,
-            title: exam.name,
-            course: exam.group_student_name,
-            group: '',
-            switch: exam.tab_switch_count,
-            test_time: exam.test_time,
-            startDate: exam.start_time,
-            endDate: exam.end_time,
-            status: 'closed',
-            user: exam.user ? {
-              id_stu: exam.user.id,
-              student_code: exam.user.student_code,
-              email: exam.user.email,
-              fullname: exam.user.fullname
-            } : null,
-            completedDate: exam.completed_date || "Chưa nộp", // Lấy thời gian nộp từ API
-            score: exam.score || 0, // Điểm số
-            questions: []
-          }));
-          setExamPerTest(mappedExamsPerTest);
+          const examAttempts = response.data;
+    
+          if (!examAttempts || examAttempts.length === 0) {
+            console.warn("Không có bài thi nào được trả về từ API.");
+            return;
+          }
+    
+          const mappedExams = await Promise.all(
+            examAttempts.map(async (exam) => {
+              let questions = [];
+              let answers = [];
+              let selectedAnswers = [];
+              try {
+                const detailRes = await axios.get(`https://inevitable-justinn-tsondev-41d66d2f.koyeb.app/api/v1/exam-attempt/get-detail-of-exam-attempt/${exam.id}`);
+                const detailData = detailRes.data;
+    
+                console.log("👉 Dữ liệu chi tiết trả về từ API:", detailData);
+    
+                const selectedMap = new Map();
+                detailData.listAnswerStudentSelected.forEach(ans => {
+                  if (!selectedMap.has(ans.question_id)) selectedMap.set(ans.question_id, []);
+                  selectedMap.get(ans.question_id).push(ans.answer_id);
+                });
+    
+                questions = detailData.listQuestion.map(q => ({
+                  id: q.question_id,
+                  content: q.question_content,
+                  order: q.order_index,
+                  answers: q.list_anwers.map(ans => ({
+                    id: ans.id,
+                    content: ans.content,
+                    isCorrect: ans.is_correct,
+                    isSelected: selectedMap.get(q.question_id)?.includes(ans.id) || false
+                  }))
+                }));
+    
+                // Lấy danh sách câu trả lời và câu trả lời đã chọn
+                answers = detailData.listQuestion.flatMap(q => q.list_anwers);
+                selectedAnswers = detailData.listAnswerStudentSelected.map(ans => ans.answer_id);
+    
+                console.log("👉 Questions sau khi ánh xạ:", questions);
+              } catch (error) {
+                console.warn(`Không thể lấy chi tiết examAttemptID ${exam.id}`, error);
+              }
+    
+              return {
+                id: exam.id,
+                exam_id: exam.exam_id,
+                title: exam.name,
+                course: exam.group_student_name,
+                group: '',
+                switch: exam.tab_switch_count,
+                test_time: exam.test_time,
+                startDate: exam.start_time,
+                endDate: exam.end_time,
+                status: 'closed',
+                user: exam.user ? {
+                  id_stu: exam.user.id,
+                  student_code: exam.user.student_code,
+                  email: exam.user.email,
+                  fullname: exam.user.fullname
+                } : null,
+                completedDate: exam.completed_date || "Chưa nộp",
+                score: exam.score || 0,
+                questions: questions,
+                answers: answers,
+                selectedAnswers: selectedAnswers
+              };
+            })
+          );
+    
+          setExamPerTest(mappedExams);
+    
+          // Cập nhật state answers và selectedAnswers
+          const allAnswers = mappedExams.flatMap(exam => exam.answers || []);
+          const allSelectedAnswers = mappedExams.flatMap(exam => exam.selectedAnswers || []);
+          setAnswers(allAnswers);
+          setSelectedAnswers(allSelectedAnswers);
+    
         } catch (error) {
           setErrorMessage('Không thể tải danh sách đề thi. Vui lòng thử lại sau.');
           console.error('Error fetching exams:', error);
@@ -156,18 +218,59 @@ const ExamManagement = () => {
         }
       };
     
-      // Example: Call fetchExamsPerTest with a specific exam ID
       if (selectedExam?.id) {
         fetchExamsPerTest(selectedExam.id);
       }
     }, [selectedExam]);
+    
 
 
     useEffect(() => {
       if (examPerTest && examPerTest.length > 0) {
         console.log("Danh sách đề thi đã load:", examPerTest);
+        console.log(examPerTest.questions);
       }
     }, [examPerTest]);
+//fetch chi tiet 1 bai thi
+const handleViewDetail = (examId) => {
+  console.log("👉 ID đề thi đang click:", examId);
+  console.log("👉 Danh sách bài làm (examPerTest):", examPerTest);
+
+  // Kiểm tra ID đề thi
+  if (!examId) {
+    console.error("Lỗi: ID đề thi không hợp lệ:", examId);
+    return;
+  }
+
+  // Kiểm tra danh sách bài làm
+  if (!examPerTest || examPerTest.length === 0) {
+    console.error("Lỗi: Danh sách bài làm rỗng hoặc chưa được tải:", examPerTest);
+    return;
+  }
+
+  // Tìm bài làm của đề thi
+  const exam = examPerTest.find((exam) => exam.id === examId);
+
+  console.log("👉 Kết quả tìm kiếm đề thi:", exam);
+
+  if (exam) {
+    // Lấy danh sách câu hỏi từ bài làm
+    const questions = exam.questions || [];
+    console.log("👉 Danh sách câu hỏi của đề thi:", questions);
+
+    // Lưu danh sách câu hỏi vào state
+    setSelectedQuestions(questions);
+    setView("studentDetail");
+  } else {
+    console.warn("Không tìm thấy đề thi này trong danh sách.");
+  }
+};
+
+
+
+
+
+    
     // Lấy danh sách bai thi
     useEffect(() => {
       const fetchExams = async () => {
@@ -200,26 +303,8 @@ const ExamManagement = () => {
       };
       fetchExams();
     }, []);
-
-    //danh sach chi tiet answer
-    const fetchAnswerPerExam = async (examAttemptID) => {
-      setLoading(true);
-      try {
-        const response = await axios.get(`https://inevitable-justinn-tsondev-41d66d2f.koyeb.app/api/v1/exam-attempt/get-detail-of-exam-attempt/${examAttemptID}`);
-        const { listQuestion, listAnswerStudentSelected } = response.data;
     
-        // In ra console để kiểm tra dữ liệu trả về
-        console.log("listQuestion:", listQuestion);
-        console.log("listAnswerStudentSelected:", listAnswerStudentSelected);
-    
-        // Nếu cần xử lý thêm, bạn có thể làm ở đây
-      } catch (error) {
-        console.error("Error fetching answer details:", error);
-        setErrorMessage("Không thể tải chi tiết câu trả lời. Vui lòng thử lại sau.");
-      } finally {
-        setLoading(false);
-      }
-    };
+   
   // Lấy danh sách câu hỏi từ API khi vào view 'add-question'
   useEffect(() => {
     if (view !== 'add-question') return;
@@ -730,18 +815,15 @@ const ExamManagement = () => {
       <td className="py-3 px-4 text-center">{student.score || "0"}</td> {/* Điểm số */}
       <td className="py-3 px-4 text-center">{student.switch || "0"}</td> {/* Điểm số */}
 
-
-      <td className="py-3 px-4">
-  <button
-    onClick={() => {
-      fetchAnswerPerExam(student.id_stu); // Gọi API với `id_stu` của sinh viên
-      setView("studentDetail"); // Chuyển sang chế độ xem chi tiết
-    }}
-    className="text-blue-600 hover:text-blue-800"
-  >
-    Xem chi tiết
-  </button>
-</td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => handleViewDetail(student.id)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          Xem chi tiết
+                        </button>
+                                        
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -751,73 +833,62 @@ const ExamManagement = () => {
         </div>
       )}
 
-{view === "studentDetail" && selectedStudent && (
+{view === 'studentDetail' && (
   <div className="max-w-4xl mx-auto bg-white rounded-md shadow p-6">
     <div className="flex items-center mb-6">
       <button
-        onClick={handleBackToDetail}
+        onClick={() => setView('list')}
         className="mr-4 text-gray-600 hover:text-gray-800"
       >
         <ArrowLeft className="h-5 w-5" />
       </button>
-      <h2 className="text-2xl font-bold">Chi tiết bài làm</h2>
+      <h2 className="text-2xl font-bold">Answer Result</h2>
     </div>
 
-    <div className="mb-6">
-      <h3 className="text-xl font-semibold">{selectedExam.title}</h3>
-      <p className="mt-2 font-medium">Sinh viên: {selectedStudent.user?.fullname}</p>
-    </div>
-
-    <div>
-      <h3 className="text-lg font-semibold mb-4">Danh sách câu hỏi</h3>
-      <div className="space-y-6">
-        {answerPerExam.map((question) => (
-          <div key={question.questionId} className="border rounded-md p-4">
-            <div className="flex items-start">
-              <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-3">
-                Câu {question.orderIndex}
-              </div>
-              <div>
-                <p className="font-medium">{question.questionContent}</p>
-                <div className="mt-2 ml-4">
-                  {question.answers.map((answer) => (
+    <div className="space-y-6">
+      {selectedQuestions.map((q, index) => (
+        <div key={q.id} className="border rounded-md p-4">
+          <div className="flex items-start">
+            {/* Số thứ tự câu hỏi */}
+            <div
+              className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-3 flex items-center justify-center"
+              style={{ minWidth: "50px", height: "50px" }}
+            >
+              <span className="text-lg font-bold">Câu {index + 1}</span>
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-800">{q.content}</p>
+              <div className="mt-2 ml-4 space-y-2">
+                {q.answers.map((ans, ansIndex) => (
+                  <div
+                    key={ans.id}
+                    className={`flex items-center ${
+                      ans.isCorrect
+                        ? "text-green-700"
+                        : ans.isSelected && !ans.isCorrect
+                        ? "text-red-700"
+                        : "text-gray-600"
+                    }`}
+                  >
                     <div
-                      key={answer.id}
-                      className={`flex items-center mt-1 ${
-                        answer.isCorrect
-                          ? "text-green-800"
-                          : question.selectedAnswers.includes(answer.id)
-                          ? "text-red-800"
-                          : "text-gray-500"
+                      className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${
+                        ans.isCorrect
+                          ? "bg-green-500 text-white"
+                          : ans.isSelected && !ans.isCorrect
+                          ? "bg-red-200"
+                          : "bg-gray-200"
                       }`}
                     >
-                      <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${
-                          answer.isCorrect
-                            ? "bg-green-500 text-white"
-                            : question.selectedAnswers.includes(answer.id)
-                            ? "bg-red-200"
-                            : "bg-gray-200"
-                        }`}
-                      >
-                        {String.fromCharCode(65 + answer.orderIndex)} {/* A, B, C, D */}
-                      </div>
-                      <span>{answer.content}</span>
-                      {answer.isCorrect && (
-                        <span className="ml-2 text-green-600">(Đúng)</span>
-                      )}
-                      {question.selectedAnswers.includes(answer.id) &&
-                        !answer.isCorrect && (
-                          <span className="ml-2 text-red-600">(Đã chọn - Sai)</span>
-                        )}
+                      {String.fromCharCode(65 + ansIndex)} {/* A, B, C, D */}
                     </div>
-                  ))}
-                </div>
+                    <span>{ans.content}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   </div>
 )}
