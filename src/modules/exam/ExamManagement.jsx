@@ -10,29 +10,29 @@ const [selectedExamAttemptId, setSelectedExamAttemptId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState('list');
   const [selectedExam, setSelectedExam] = useState(null);
-  const [examPerTest, setExamPerTest] = useState([]); //
+  const [examPerTest, setExamPerTest] = useState([]); 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [listStudyGroups, setListStudyGroups] = useState([]);
   const [selectStudyGroup, setSelectStudyGroup] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [levelSelect, setLevelSelect] = useState(""); // Độ khó câu hỏi
-  const [chapterSelect, setChapterSelect] = useState(""); // Chương câu hỏi
-  const [listChapters, setListChapters] = useState([]); // Danh sách chương câu hỏi
-  const [answerPerExam, setAnswerPerExam] = useState([]); // Dữ liệu câu trả lời của sinh viên
-  // State cho danh sách câu hỏi từ API
-  const [answers, setAnswers] = useState([]); // Lưu danh sách câu trả lời
-const [selectedAnswers, setSelectedAnswers] = useState([]); // Lưu danh sách câu trả lời đã chọn
+  const [levelSelect, setLevelSelect] = useState(""); 
+  const [chapterSelect, setChapterSelect] = useState(""); 
+  const [listChapters, setListChapters] = useState([]); 
+  const [answerPerExam, setAnswerPerExam] = useState([]); 
+
+  const [answers, setAnswers] = useState([]); 
+const [selectedAnswers, setSelectedAnswers] = useState([]); 
   const [questions, setQuestions] = useState([]);
   const [selectedQuestions, setSelectedQuestions] = useState(() => {
-    // Đọc từ localStorage khi khởi tạo
+    
     const saved = localStorage.getItem('selectedQuestions');
     return saved ? JSON.parse(saved) : [];
-  }); // Lưu danh sách câu hỏi đã chọn
-  const [currentPage, setCurrentPage] = useState(1); // Trang hiện tại
-  const [totalPages, setTotalPages] = useState(1); // Tổng số trang
-  const [limit] = useState(10); // Số câu hỏi mỗi trang (có thể điều chỉnh)
+  }); 
+  const [currentPage, setCurrentPage] = useState(1); 
+  const [totalPages, setTotalPages] = useState(1); 
+  const [limit] = useState(10); 
 
   const difficultyLabels = [
     {
@@ -83,22 +83,22 @@ const [selectedAnswers, setSelectedAnswers] = useState([]); // Lưu danh sách c
   
   const [listStudyGroupSelect, setListStudyGroupSelect] = useState([]);
 
-  // Lưu selectedQuestions vào localStorage mỗi khi nó thay đổi
+  
   useEffect(() => {
     localStorage.setItem('selectedQuestions', JSON.stringify(selectedQuestions));
   }, [selectedQuestions]);
 
-  // Hàm tính số lượng câu hỏi đã chọn theo độ khó
+ 
   const countQuestionsByDifficulty = (difficulty) => {
     return selectedQuestions.filter(q => q.difficulty === difficulty).length;
   };
 
-  // Gỡ lỗi để theo dõi levelSelect
+  
   useEffect(() => {
     console.log('levelSelect thay đổi:', levelSelect);
   }, [levelSelect]);
 
-  // Lấy danh sách nhóm học phần
+ 
   useEffect(() => {
     const fetchStudyGroups = async () => {
       try {
@@ -111,7 +111,7 @@ const [selectedAnswers, setSelectedAnswers] = useState([]); // Lưu danh sách c
     fetchStudyGroups();
   }, []);
 
-  // Lấy danh sách chương của môn học
+  
   useEffect(() => {
     if (view !== 'add-question' || !listStudyGroups[selectStudyGroup]) return;
 
@@ -125,7 +125,7 @@ const [selectedAnswers, setSelectedAnswers] = useState([]); // Lưu danh sách c
     };
     fetchChapters();
   }, [view, selectStudyGroup, listStudyGroups]);
-    // Lấy danh sách đề thi
+   
     useEffect(() => {
       const fetchExamsPerTest = async (examId) => {
         setLoading(true);
@@ -167,7 +167,7 @@ const [selectedAnswers, setSelectedAnswers] = useState([]); // Lưu danh sách c
                   }))
                 }));
     
-                // Lấy danh sách câu trả lời và câu trả lời đã chọn
+              
                 answers = detailData.listQuestion.flatMap(q => q.list_anwers);
                 selectedAnswers = detailData.listAnswerStudentSelected.map(ans => ans.answer_id);
     
@@ -204,7 +204,6 @@ const [selectedAnswers, setSelectedAnswers] = useState([]); // Lưu danh sách c
     
           setExamPerTest(mappedExams);
     
-          // Cập nhật state answers và selectedAnswers
           const allAnswers = mappedExams.flatMap(exam => exam.answers || []);
           const allSelectedAnswers = mappedExams.flatMap(exam => exam.selectedAnswers || []);
           setAnswers(allAnswers);
@@ -231,34 +230,34 @@ const [selectedAnswers, setSelectedAnswers] = useState([]); // Lưu danh sách c
         console.log(examPerTest.questions);
       }
     }, [examPerTest]);
-//fetch chi tiet 1 bai thi
+
 const handleViewDetail = (examId) => {
   console.log("👉 ID đề thi đang click:", examId);
   console.log("👉 Danh sách bài làm (examPerTest):", examPerTest);
 
-  // Kiểm tra ID đề thi
+
   if (!examId) {
     console.error("Lỗi: ID đề thi không hợp lệ:", examId);
     return;
   }
 
-  // Kiểm tra danh sách bài làm
+
   if (!examPerTest || examPerTest.length === 0) {
     console.error("Lỗi: Danh sách bài làm rỗng hoặc chưa được tải:", examPerTest);
     return;
   }
 
-  // Tìm bài làm của đề thi
+ 
   const exam = examPerTest.find((exam) => exam.id === examId);
 
   console.log("👉 Kết quả tìm kiếm đề thi:", exam);
 
   if (exam) {
-    // Lấy danh sách câu hỏi từ bài làm
+    
     const questions = exam.questions || [];
     console.log("👉 Danh sách câu hỏi của đề thi:", questions);
 
-    // Lưu danh sách câu hỏi vào state
+  
     setSelectedQuestions(questions);
     setView("studentDetail");
   } else {
@@ -266,12 +265,6 @@ const handleViewDetail = (examId) => {
   }
 };
 
-
-
-
-
-    
-    // Lấy danh sách bai thi
     useEffect(() => {
       const fetchExams = async () => {
         setLoading(true);
@@ -305,7 +298,7 @@ const handleViewDetail = (examId) => {
     }, []);
     
    
-  // Lấy danh sách câu hỏi từ API khi vào view 'add-question'
+ 
   useEffect(() => {
     if (view !== 'add-question') return;
 
@@ -318,12 +311,12 @@ const handleViewDetail = (examId) => {
         
         const { items, total, page, totalPages } = response.data;
 
-        // Ánh xạ dữ liệu từ API
+      
         const mappedQuestions = items.map(item => ({
           id: item.id,
           text: item.content,
           difficulty: item.difficulty_level,
-          checked: selectedQuestions.some(q => q.id === item.id) // Đánh dấu nếu câu hỏi đã được chọn
+          checked: selectedQuestions.some(q => q.id === item.id) 
         }));
 
         setQuestions(mappedQuestions);
@@ -410,7 +403,7 @@ const handleViewDetail = (examId) => {
 
     try {
       const response = await axios.post('/exam/create-manual', examData);
-      setSelectedExam({ id: response.data.id }); // Lưu ID của đề thi vừa tạo
+      setSelectedExam({ id: response.data.id }); 
       setView('add-question');
     } catch (error) {
       console.error('Error creating exam:', error);
@@ -458,18 +451,18 @@ const handleViewDetail = (examId) => {
     setSelectedStudent(null);
   };
 
-  // Hàm xử lý chọn/bỏ chọn câu hỏi
+  
   const handleQuestionToggle = (question) => {
     if (selectedQuestions.some(q => q.id === question.id)) {
-      // Bỏ chọn: Lọc bỏ câu hỏi khỏi mảng
+      
       const updated = selectedQuestions.filter(q => q.id !== question.id);
       setSelectedQuestions(updated);
     } else {
-      // Chọn: Thêm câu hỏi vào mảng
+      
       setSelectedQuestions([...selectedQuestions, { ...question, checked: true }]);
     }
 
-    // Cập nhật trạng thái checked trong danh sách câu hỏi hiển thị
+    
     const updatedQuestions = questions.map(q =>
       q.id === question.id ? { ...q, checked: !q.checked } : q
     );
@@ -536,9 +529,7 @@ const handleViewDetail = (examId) => {
                       </div>
                     </div>
                     <div className="mt-4 flex space-x-2">
-                      <div className="bg-red-100 text-red-800 px-3 py-1 rounded-md">
-                        Đã đóng
-                      </div>
+                     
                       <button
                         onClick={() => handleViewExamDetails(exam)}
                         className="bg-green-100 text-green-800 px-3 py-1 rounded-md flex items-center space-x-1"
@@ -1027,11 +1018,11 @@ const handleViewDetail = (examId) => {
                         return;
                       }
 
-                      // Lấy danh sách câu hỏi đã chọn từ localStorage
+              
                       const selected = JSON.parse(localStorage.getItem('selectedQuestions') || '[]');
                       const listQuestion = selected.map((q, index) => ({
                         question_id: q.id,
-                        order_index: index + 1 // Thứ tự bắt đầu từ 1
+                        order_index: index + 1 
                       }));
 
                       try {
@@ -1047,11 +1038,11 @@ const handleViewDetail = (examId) => {
                           )
                         );
 
-                        // Xóa localStorage và reset selectedQuestions
+                        
                         setSelectedQuestions([]);
                         localStorage.removeItem('selectedQuestions');
 
-                        // Chuyển về danh sách đề thi
+                       
                         setView('list');
                       } catch (error) {
                         console.error('Error adding questions:', error);
@@ -1116,25 +1107,5 @@ const handleViewDetail = (examId) => {
     </div>
   );
 };
-
-// Dữ liệu mock cho sinh viên
-const mockStudentExams = [
-  {
-    studentId: 1,
-    name: "Nguyễn Văn A",
-    examId: 1,
-    score: 8.5,
-    completedDate: "05/08/2023, 05:25 PM",
-    answers: []
-  },
-  {
-    studentId: 2,
-    name: "Trần Thị B",
-    examId: 1,
-    score: 7.0,
-    completedDate: "05/08/2023, 05:30 PM",
-    answers: []
-  }
-];
 
 export default ExamManagement;

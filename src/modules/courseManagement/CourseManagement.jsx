@@ -18,7 +18,7 @@ const CourseManagement = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true); // Bắt đầu loading
+      setLoading(true);
       try {
         const coursesResponse = await axios.get(`/subject?page=${currentPage}&limit=${itemsPerPage}`);
         const { items, totalPages } = coursesResponse.data || {};

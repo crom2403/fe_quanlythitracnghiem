@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Search,
@@ -6,6 +7,7 @@ import {
   Plus,
   Upload,
   ChevronDown,
+  Loader2, 
 } from 'lucide-react';
 import axios from "../../axiosConfig";
 
@@ -30,7 +32,7 @@ const QuestionManagement = () => {
   const [questionsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     question: '',
     options: ['', '', '', ''],
@@ -42,15 +44,17 @@ const QuestionManagement = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true); 
       await fetchSubjects();
       await fetchChapters();
-      await fetchQuestions(1); // Tải trang đầu tiên
+      await fetchQuestions(1); 
+      setLoading(false);
     };
     fetchData();
   }, []);
 
   useEffect(() => {
-    fetchQuestions(currentPage); // Tải lại khi currentPage thay đổi
+    fetchQuestions(currentPage); 
   }, [currentPage]);
 
   useEffect(() => {
@@ -58,6 +62,7 @@ const QuestionManagement = () => {
       if (selectedSubject) {
         const subject = subjects.find((s) => s.name === selectedSubject);
         if (subject) {
+          setLoading(true); 
           try {
             let allChapters = [];
             let page = 1;
@@ -78,6 +83,8 @@ const QuestionManagement = () => {
           } catch (error) {
             console.error('Lỗi khi lấy chương cho bảng:', error);
             setTableFilteredChapters([]);
+          } finally {
+            setLoading(false); 
           }
         } else {
           setTableFilteredChapters(chapters);
@@ -95,6 +102,7 @@ const QuestionManagement = () => {
       if (formData.subject) {
         const subject = subjects.find((s) => s.name === formData.subject);
         if (subject) {
+          setLoading(true);
           try {
             let allChapters = [];
             let page = 1;
@@ -121,6 +129,8 @@ const QuestionManagement = () => {
             console.error('Lỗi khi lấy chương cho form:', error);
             setFormFilteredChapters([]);
             setFormData((prev) => ({ ...prev, chapter: '' }));
+          } finally {
+            setLoading(false); 
           }
         } else {
           setFormFilteredChapters([]);
@@ -139,6 +149,7 @@ const QuestionManagement = () => {
   }, [formData.subject, subjects, chapters]);
 
   const fetchSubjects = async () => {
+    setLoading(true); 
     try {
       const response = await axios.get('/subject');
       const subjectData = response.data.items || response.data || [];
@@ -153,10 +164,13 @@ const QuestionManagement = () => {
       console.error('Lỗi khi lấy danh sách môn học:', error);
       alert('Không thể tải danh sách môn học.');
       setSubjects([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchChapters = async () => {
+    setLoading(true);
     try {
       let allChapters = [];
       let page = 1;
@@ -177,14 +191,15 @@ const QuestionManagement = () => {
       console.error('Lỗi khi lấy danh sách chương:', error);
       alert('Không thể tải danh sách chương.');
       setChapters([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchQuestions = async (page = 1, limit = questionsPerPage) => {
+    setLoading(true); 
     try {
       const response = await axios.get('/question?limit=1000&page=1');
-
-      // const response = await axios.get(`/question?page=${page}&limit=${limit}`);
       const questionData = response.data.items || response.data || [];
       const totalItems = response.data.totalItems || questionData.length;
       setQuestions(questionData);
@@ -201,6 +216,8 @@ const QuestionManagement = () => {
       setQuestions([]);
       setTotalPages(1);
       setTotalItems(0);
+    } finally {
+      setLoading(false); 
     }
   };
 
@@ -233,7 +250,7 @@ const QuestionManagement = () => {
     const newTotalPages = Math.ceil(totalItems / questionsPerPage);
     setTotalPages(newTotalPages);
     if (currentPage > newTotalPages && newTotalPages > 0) {
-      setCurrentPage(newTotalPages); // Điều chỉnh currentPage nếu vượt quá
+      setCurrentPage(newTotalPages); 
     }
   }, [searchTerm, selectedSubject, selectedChapter, selectedDifficulty, totalItems]);
 
@@ -275,6 +292,7 @@ const QuestionManagement = () => {
     setEditingQuestion(question);
     const subject = subjects.find((s) => s.name === question.subject_name);
     const fetchChaptersForEdit = async () => {
+      setLoading(true); 
       if (subject) {
         try {
           let allChapters = [];
@@ -319,6 +337,8 @@ const QuestionManagement = () => {
             chapter: '',
             difficulty: mapDifficultyToVietnamese(question.difficulty_level),
           });
+        } finally {
+          setLoading(false); 
         }
       } else {
         setFormFilteredChapters(chapters);
@@ -343,12 +363,15 @@ const QuestionManagement = () => {
 
   const handleDeleteQuestion = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
+      setLoading(true); 
       try {
         await axios.delete(`/question/${id}`);
         fetchQuestions(currentPage);
       } catch (error) {
         console.error('Lỗi khi xóa câu hỏi:', error);
         alert('Xóa câu hỏi thất bại.');
+      } finally {
+        setLoading(false); 
       }
     }
   };
@@ -402,6 +425,7 @@ const QuestionManagement = () => {
       })),
     };
 
+    setLoading(true);
     try {
       if (editingQuestion) {
         await axios.put(`/question/${editingQuestion.id}`, apiQuestion);
@@ -413,6 +437,8 @@ const QuestionManagement = () => {
     } catch (error) {
       console.error('Lỗi khi lưu câu hỏi:', error);
       alert('Lưu câu hỏi thất bại. Vui lòng thử lại.');
+    } finally {
+      setLoading(false); 
     }
   };
 
@@ -430,6 +456,7 @@ const QuestionManagement = () => {
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            disabled={loading} 
           />
           {Search && <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />}
         </div>
@@ -440,6 +467,7 @@ const QuestionManagement = () => {
               className="appearance-none bg-white border rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
+              disabled={loading} 
             >
               <option value="">Tất cả môn học</option>
               {subjects.map((subject) => (
@@ -456,6 +484,7 @@ const QuestionManagement = () => {
               className="appearance-none bg-white border rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedChapter}
               onChange={(e) => setSelectedChapter(e.target.value)}
+              disabled={loading} 
             >
               <option value="">Tất cả chương</option>
               {tableFilteredChapters.map((chapter) => (
@@ -472,6 +501,7 @@ const QuestionManagement = () => {
               className="appearance-none bg-white border rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}
+              disabled={loading} 
             >
               <option value="">Tất cả độ khó</option>
               {difficultyLevels.map((level) => (
@@ -499,6 +529,7 @@ const QuestionManagement = () => {
               setShowModal(true);
             }}
             className="flex items-center gap-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+            disabled={loading} 
           >
             {Plus && <Plus size={18} />} Thêm
           </button>
@@ -509,6 +540,7 @@ const QuestionManagement = () => {
               type="file"
               accept=".docx"
               className="hidden"
+              disabled={loading} 
             />
           </label>
         </div>
@@ -539,7 +571,19 @@ const QuestionManagement = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {currentQuestions.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td
+                  colSpan="6"
+                  className="px-6 py-4 text-center text-sm text-gray-500"
+                >
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="animate-spin text-blue-500" size={24} />
+                    <span className="ml-2">Đang tải câu hỏi...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : currentQuestions.length > 0 ? (
               currentQuestions.map((q, index) => (
                 <tr key={q.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -572,12 +616,14 @@ const QuestionManagement = () => {
                     <button
                       onClick={() => handleEditQuestion(q)}
                       className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      disabled={loading} 
                     >
                       {Edit && <Edit size={18} />}
                     </button>
                     <button
                       onClick={() => handleDeleteQuestion(q.id)}
                       className="text-red-600 hover:text-red-900"
+                      disabled={loading} 
                     >
                       {Trash2 && <Trash2 size={18} />}
                     </button>
@@ -607,9 +653,9 @@ const QuestionManagement = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
+            disabled={currentPage === 1 || loading} 
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              currentPage === 1
+              currentPage === 1 || loading
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
             }`}
@@ -625,12 +671,14 @@ const QuestionManagement = () => {
                   setCurrentPage(page);
                 }
               }}
-              disabled={page === '...' || page === currentPage}
+              disabled={page === '...' || page === currentPage || loading} 
               className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                 page === currentPage
                   ? 'bg-blue-500 text-white'
                   : page === '...'
                   ? 'bg-white text-gray-500 cursor-default'
+                  : loading
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : 'bg-white text-gray-700 hover:bg-blue-100'
               }`}
             >
@@ -639,9 +687,9 @@ const QuestionManagement = () => {
           ))}
           <button
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
+            disabled={currentPage === totalPages || loading} 
             className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              currentPage === totalPages
+              currentPage === totalPages || loading
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
             }`}
@@ -669,6 +717,7 @@ const QuestionManagement = () => {
                 value={formData.question}
                 onChange={handleFormChange}
                 placeholder="Nhập nội dung câu hỏi..."
+                disabled={loading} 
               />
             </div>
 
@@ -687,6 +736,7 @@ const QuestionManagement = () => {
                     value={option}
                     onChange={(e) => handleOptionChange(index, e.target.value)}
                     placeholder={`Lựa chọn ${index + 1}`}
+                    disabled={loading} 
                   />
                 </div>
               ))}
@@ -701,6 +751,7 @@ const QuestionManagement = () => {
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.correctAnswer}
                 onChange={handleFormChange}
+                disabled={loading} 
               >
                 <option value="">-- Chọn đáp án đúng --</option>
                 {formData.options.map(
@@ -724,6 +775,7 @@ const QuestionManagement = () => {
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.subject}
                   onChange={handleFormChange}
+                  disabled={loading}
                 >
                   <option value="">Chọn môn học</option>
                   {subjects.map((subject) => (
@@ -743,6 +795,7 @@ const QuestionManagement = () => {
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.chapter}
                   onChange={handleFormChange}
+                  disabled={loading}
                 >
                   <option value="">Chọn chương</option>
                   {formFilteredChapters.length > 0 ? (
@@ -768,6 +821,7 @@ const QuestionManagement = () => {
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.difficulty}
                   onChange={handleFormChange}
+                  disabled={loading} 
                 >
                   <option value="">Chọn độ khó</option>
                   {difficultyLevels.map((level) => (
@@ -783,14 +837,23 @@ const QuestionManagement = () => {
               <button
                 onClick={() => setShowModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={loading} 
               >
                 Hủy
               </button>
               <button
                 onClick={handleSaveQuestion}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                disabled={loading} 
               >
-                Lưu
+                {loading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="animate-spin mr-2" size={18} />
+                    Đang lưu...
+                  </div>
+                ) : (
+                  'Lưu'
+                )}
               </button>
             </div>
           </div>
