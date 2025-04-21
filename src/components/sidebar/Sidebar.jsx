@@ -95,6 +95,7 @@ const Sitebar = () => {
             to={path.EXAMPAPER}
             onClick={() => handleLinkClick(path.EXAMPAPER)}
             className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.EXAMPAPER)}`}
+
           >
             <FaClipboardList className={`h-6 w-6 mr-2 ${activeLink === path.EXAMPAPER ? 'text-white' : 'text-black hover:text-white'}`} />
             Đề kiểm tra
