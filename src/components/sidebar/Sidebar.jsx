@@ -103,10 +103,79 @@ const Sitebar = () => {
         </div>
       </div>
     );
-  } else if (role === 'giangvien') {
+  } else if (role === 'teacher') {
     return (
-      <div>
-        <h1>GIẢNG VIÊN SIDEBAR</h1>
+      <div
+        className="w-full h-full bg-white-200"
+        style={{ fontFamily: 'Playfair Display' }}
+      >
+        <div className="flex items-center justify-center h-16 bg-red-700 text-white">
+          <h1 className="text-2xl font-bold">STU Test</h1>
+        </div>
+        <div className="mt-10 pt-2 pb-2 w-9/10 mx-auto text-lg font-semibold flex items-center bg-black rounded-xl text-white">
+          <ViewGridIcon className="h-6 w-6 text-white mr-2 pl-2" />
+          Tổng quan
+        </div>
+
+        <div className="flex flex-col p-4 space-y-2">
+          <Link
+            to={path.GROUP}
+            onClick={() => handleLinkClick(path.GROUP)}
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.GROUP)}`}
+          >
+            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Nhóm học phần
+          </Link>
+          <Link
+            to={path.Question123}
+            onClick={() => handleLinkClick(path.Question123)}
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Câu hỏi
+          </Link>
+          <a
+            href="#"
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Thông tin cá nhân
+          </a>
+          
+          <Link
+           to={path.COURSEMANAGEMENT}
+           onClick={() => handleLinkClick(path.COURSEMANAGEMENT)}
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <BookOpenIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Môn học
+          </Link> 
+           
+          <a
+            href="#"
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <ClipboardIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Phân công
+          </a>
+
+
+          <Link
+           to={path.EXAMMANAGEMENT}
+           onClick={()=>handleLinkClick(path.EXAMMANAGEMENT)}
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <CheckCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Đề kiểm tra
+          </Link>
+          <a
+            href="#"
+            className="text-black hover:bg-red-700 hover:text-white p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105"
+          >
+            <BellIcon className="h-6 w-6 hover:text-white text-black mr-2" />
+            Thông báo
+          </a>
+        </div>
       </div>
     );
   } else {
@@ -125,11 +194,11 @@ const Sitebar = () => {
 
         <div className="flex flex-col p-4 space-y-2">
           <Link
-            to={path.Course}
-            onClick={() => handleLinkClick(path.Course)}
-            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.Course)}`}
+            to={path.COURSEGROUP}
+            onClick={() => handleLinkClick(path.COURSEGROUP)}
+            className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.COURSEGROUP)}`}
           >
-            <UsersIcon className={`h-6 w-6 mr-2 ${activeLink === path.Course ? 'text-white' : 'text-black hover:text-white'}`} />
+            <UsersIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Nhóm học phần
           </Link>
           <Link
@@ -137,9 +206,14 @@ const Sitebar = () => {
             onClick={() => handleLinkClick(path.TEST)}
             className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.TEST)}`}
           >
-            <QuestionMarkCircleIcon className={`h-6 w-6 mr-2 ${activeLink === path.TEST ? 'text-white' : 'text-black hover:text-white'}`} />
+            {/* lớp transform cho phép các hiệu ứng biến đổi như scale, rotate, translate,...*/}
+            {/* transition-all áp dụng hiệu ứng chuyển tiếp cho tất cả các thuộc tính có thể thay đổi, tạo hiệu ứng mượt mà */}
+            <QuestionMarkCircleIcon className="h-6 w-6 hover:text-white text-black mr-2" />
             Bài kiểm tra
           </Link>
+
+          
+         
         </div>
       </div>
     );
