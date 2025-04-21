@@ -15,7 +15,7 @@ const CustomModal = ({ isOpen, onClose, title, children, className }) => {
       shouldCloseOnOverlayClick={false}
     >
       <div className="flex items-center min-h-8">
-        <div className="ml-auto mr-4 bg-black text-white rounded-2xl">
+        <div className="ml-auto mr-4 bg-gray-400 hover:bg-black text-white rounded-2xl">
           <XIcon className="w-7 h-7" onClick={onClose} />
         </div>
       </div>

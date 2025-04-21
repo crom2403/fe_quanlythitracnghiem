@@ -8,74 +8,12 @@ import {
   PencilIcon
 } from '@heroicons/react/outline';
 import { FaWrench } from 'react-icons/fa';
+import { examPapersResponse } from './ExamPaperService';
+import { useEffect, useState } from 'react';
+import { Checkbox } from '@mui/material';
 import CustomModal from '../../components/modal/CustomModal';
 import CustomButton from '../../components/button/CustomButton';
-import { useState } from 'react';
-import { Checkbox } from '@mui/material';
-
-const ExamPapers = [
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Đã đóng',
-  },
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Đang mở',
-  },
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Chưa bắt đầu',
-  },
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Đã đóng',
-  },
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Chưa bắt đầu',
-  },
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Đã đóng',
-  },
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Đang mở',
-  },
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Đã đóng',
-  },
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Đã đóng',
-  },
-  {
-    ten: 'Đề thi giữa kì',
-    hocphan: 'Lập trình di động-NH2025-HK1',
-    thoigian: '05/05/2025 5PM -07/05/2025 5PM',
-    trangthai: 'Đã đóng',
-  },
-];
-
+import PaginatedTable from '../../components/pagination/PaginatedTable';
 const statusColors = {
   'Đã đóng': 'bg-red-200 text-red-700',
   'Đang mở': 'bg-green-200 text-green-700',
@@ -84,12 +22,45 @@ const statusColors = {
 
 const ExamPaper = () => {
   const [openModalName, setOpenModalName] = useState('');
+  const [examPapers, setExamPapers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   const openModal = (modalName) => {
     setOpenModalName(modalName);
   };
   const closeModal = () => {
     setOpenModalName('');
   };
+  const fetchgroupedCourses = async()=>{
+    const result = await getGroupedgroupedCoursesData();
+    if(result)
+    {
+      setgroupedCourses(result);
+    }
+  }
+
+  const fetchExamPapers = async () => {
+    const result = await examPapersResponse();
+    if (result) {
+      setExamPapers(result);
+    }
+  };
+
+  useEffect(() => {
+    fetchExamPapers();
+    fetchgroupedCourses();
+  }, []);
+
+  // Calculate total pages and slice data for the current page
+  const totalPages = Math.ceil(examPapers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentExamPapers = examPapers.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   const deThiModalContent = () => {
     return (
       <div
@@ -134,7 +105,9 @@ const ExamPaper = () => {
           <div className="flex h-15 w-full bg-gray-600 text-white  items-center rounded-t-md">
             <p className="ml-8">Giao cho</p>
             <select className="ml-auto mr-8 bg-white text-black p-2 min-w-100 rounded-md">
-              <option>840000-Nhập môn lập trình-NH2025-HK1</option>
+              {Array.from(groupedCourses.entries()).map(([key, courses],index)=>(
+                <option>{courses.key}</option>
+              ))}
             </select>
           </div>
           <div className="">
@@ -143,7 +116,6 @@ const ExamPaper = () => {
             </div>
           </div>
           <div className="">
-            {/* Thay chỗ này thành các nhóm của học phần được chọn */}
             <div className="flex  items-center justify-evenly">
               <div className="flex items-center">
                 <Checkbox /> <p>Nhóm 1</p>
@@ -192,7 +164,6 @@ const ExamPaper = () => {
                     <RefreshIcon className='w-5 h-5' />
                     <p>CẬP NHẬT ĐỀ</p>
                 </div>
-
                 <div className="w-3/6 pt-2 pb-2 bg-gray-600 text-white flex items-center space-x-2 justify-center rounded-md hover:bg-cyan-900">
                     <PencilIcon className='w-5 h-5' />
                     <p>CHỈNH SỬA DANH SÁCH CÂU HỎI</p>
@@ -204,6 +175,7 @@ const ExamPaper = () => {
       </div>
     );
   };
+
   return (
     <div
       className="w-full min-h-screen bg-gray-100 flex justify-center"
@@ -212,7 +184,7 @@ const ExamPaper = () => {
       <CustomModal
         isOpen={openModalName === 'de-thi' || openModalName === 'sua-de-thi'}
         onClose={closeModal}
-        className="bg-blue-50 rounded-xl p-6 w-200 mx-auto z-40 min-h-150 mt-20 border-2 border-black"
+        className="bg-blue-50 rounded-xl p-6 w-200 mx-auto z-40 min-h-150 mt-20 border-2 border-black w-250"
         title="Thêm đề thi"
       >
         {deThiModalContent()}
@@ -236,32 +208,31 @@ const ExamPaper = () => {
             <p>TẠO ĐỀ THI</p>
           </div>
         </div>
-        <div className="w-full max-h-200 mt-8 overflow-auto">
-          {ExamPapers.map((exampaper, index) => (
+        <div className="w-full mt-8">
+          {currentExamPapers.map((exampaper, index) => (
             <div
               key={index}
-              className="flex items-center ml-8 mr-8 space-y-4 bg-cyan-100 mt-4 text-black rounded-3xl border-l-4 border-t-2 border-cyan-600"
+              className="flex items-center  space-y-4 bg-cyan-50 mt-4 text-black rounded-3xl border-l-4 border-t-2 border-cyan-600"
             >
               <div className="w-1/2 pl-8 ">
-                <p className="text-2xl pt-4 text-blue-900">{exampaper.ten}</p>
+                <p className="text-2xl pt-4 text-blue-900">{exampaper.name}</p>
                 <div className="flex items-center mt-4">
                   <BookOpenIcon className="w-4 h-4 mr-2" />
                   Giao cho học phần:{' '}
-                  <p className="text-blue-700">{exampaper.hocphan}</p>
+                  <p className="text-blue-700">{exampaper.group_student_name}</p>
                 </div>
                 <div className="flex items-center">
                   <ClockIcon className="w-4 h-4 mr-2" />
-                  Diễn ra từ: {exampaper.thoigian}
+                  Diễn ra từ: {exampaper.start_time} đến {exampaper.end_time}
                 </div>
               </div>
               <div className="w-1/2 flex items-center space-x-2">
                 <div
                   className={`min-w-25 max-w-30 flex items-center justify-center p-1 rounded-2xl ${statusColors[exampaper.trangthai]}`}
                 >
-                  {/* ứng dụng status ở đây để thay đổi màu nền */}
-                  <p className="">{exampaper.trangthai}</p>
+                  <p>{exampaper.trangthai}</p>
                 </div>
-                <div className="flex w-36 items-center justify-center space-x-2 bg-white text-black p-1 rounded-2xl ">
+                <div className="flex w-36 items-center justify-center space-x-2 bg-white text-black p-1 rounded-2xl hover:bg-blue-950 hover:text-white">
                   <EyeIcon className="w-4 h-4" />
                   <p>Xem chi tiết</p>
                 </div>
@@ -274,13 +245,21 @@ const ExamPaper = () => {
                   <FaWrench className="w-4 h-4" />
                   <p>Chỉnh sửa</p>
                 </div>
-                <div className="flex w-25 items-center justify-center space-x-2 bg-red-700 text-white p-1 rounded-2xl ">
+                <div className="flex w-25 items-center justify-center space-x-2 bg-red-300 text-red-900 hover:bg-red-700 hover:text-white p-1 rounded-2xl ">
                   <XIcon className="w-4 h-4" />
                   <p>Xóa đề</p>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+        {/* Add PaginatedTable */}
+        <div className="flex justify-center mt-8 mb-4">
+          <PaginatedTable
+            totalPages={totalPages}
+            currentPage={currentPage}
+            onPageChange={handlePageChange}
+          />
         </div>
       </div>
     </div>

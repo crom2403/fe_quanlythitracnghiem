@@ -3,7 +3,6 @@ import {
   SearchIcon,
   CogIcon,
   XCircleIcon,
-  XIcon,
   SortAscendingIcon,
   SortDescendingIcon,
   ClipboardIcon,
@@ -12,9 +11,8 @@ import {
 } from '@heroicons/react/outline';
 import { useEffect, useState } from 'react';
 import { FaFile } from 'react-icons/fa';
-import { createInviteCode, detail } from './GroupDetaillService';
+import { detail, addNewStudent, groupInviteCode, changeInviteCode, removeStudent, groupExams } from './GroupDetaillService';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelectedGroupDetailStore } from '../group/useGroupStore';
 import { useLocation } from 'react-router-dom';
 
 import Modal from 'react-modal';
@@ -25,6 +23,12 @@ Modal.setAppElement('#root');
 
 const GroupDetail = () => {
   const [students, setStudents] = useState([]);
+  const [activeModal, setActiveModal] = useState(null);
+  const [activeTab, setActiveTab] = useState('manual');
+  const [inviteCode, setInviteCode] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [setActiveLink] = useState(path.EXAMPAPER);
+  const [exams, setExams] = useState([]);
   const location = useLocation();
   const navigate = useNavigate();
   const selectedGroupDetail = location.state?.selectedGroupDetail || {
@@ -32,91 +36,168 @@ const GroupDetail = () => {
     groupName: '',
     studentCount: 0
   };
+  const handleAddNewStudent = async ({ student_code, fullname, password, studyGroupId }) => {
+    const newStudent = { student_code, fullname, password, studyGroupId };
+    console.log("New student", newStudent);
+    const result = await addNewStudent(newStudent);
+    if (!result)
+      alert("Máy chủ không phản hồi!");
+    if (result.status === 201)
+      alert(`Đã thêm sinh viên ${fullname} vào nhóm học phần!`);
+    else
+      alert(`Thêm sinh viên vào học phần thất bại, mã lỗi:${result.status}`);
+  }
+
+  const handleSetInviteCode = async () => {
+    const result = await groupInviteCode(selectedGroupDetail.groupId);
+    if (!result)
+      console.error(`Call api get invite code failed: ${result.message}`);
+    else {
+      if (result.success === true)
+        setInviteCode(result.invite_code);
+      else
+        console.warn('Get invite code failed');
+    }
+  }
+
+  // Thay đổi mã mời
+  const handleChangeInviteCode = async () => {
+    const result = await changeInviteCode(selectedGroupDetail.groupId);
+    if (!result)
+      console.error(`Call api change invite code failed: ${result.message}`);
+    else {
+      if (result.success === true) {
+        alert("Đợi một chút...");
+        handleSetInviteCode();
+      } else
+        console.warn('Change invite code failed');
+    }
+  }
+
+  const handleRemoveStudent = async(student_code) => {
+    const result = await removeStudent(selectedGroupDetail.groupId, student_code);
+    if (!result)
+      console.error(`Call api remove student failed: ${result.message}`);
+    else {
+      if (result.success === true) {
+        alert(`Đã xóa sinh viên có mã '${student_code}'`);
+        fetchStudents(); // Tải lại danh sách sau khi xóa
+      } else
+        console.warn('Remove student failed!', result.message);
+        // alert('Xóa sinh viên khỏi nhóm thất bại!');
+    }
+  }
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Xử lý tìm kiếm
+  const handleSearch = () => {
+    if (searchQuery.trim() === '') {
+      // Nếu ô tìm kiếm trống, tải lại toàn bộ danh sách
+      fetchStudents();
+    } else {
+      const filtered = students.filter((student) =>
+        student.fullname.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (filtered.length === 0) {
+        alert(`Không tìm thấy sinh viên tên '${searchQuery}'`);
+      }
+      setStudents(filtered);
+    }
+  };
+
+  const setSelectedExam = (selectedExamId)=>{
+    sessionStorage.getItem('selectedExamId', selectedExamId);
+    console.log(`Selected exam id: '${selectedExamId}'`);
+  }
+
+  const fetchStudents = async () => {
+    try {
+      const groupId = selectedGroupDetail.groupId;
+      const result = await detail(groupId);
+      if (Array.isArray(result)) {
+        setStudents(result);
+      } else {
+        setStudents([]);
+      }
+    } catch (err) {
+      console.error('Lỗi khi fetch sinh viên:', err);
+      setStudents([]);
+    }
+  };
+  useEffect(()=>{
+    const loadExams = async()=>{
+      const result = await groupExams(selectedGroupDetail.groupId);
+      if(!result)
+      {
+        console.error('Get exams failed!');
+      }else{
+        setExams(result);
+      }
+    }
+    loadExams();
+  },[])
+
   useEffect(() => {
     if (selectedGroupDetail.groupId === -1) {
       navigate(path.GROUP);
     }
-    const fetchStudents = async () => {
-      try {
-        const groupId = selectedGroupDetail.groupId;
-        const result = await detail(groupId);
-        if (Array.isArray(result)) {
-          setStudents(result);
-        } else {
-          setStudents([]);
-        }
-      } catch (err) {
-        console.error('Lỗi khi fetch sinh viên:', err);
-        setStudents([]);
-      }
-    };
-
+  
     fetchStudents();
   }, [selectedGroupDetail?.groupId]);
 
-  const de = [
-    ['Đề tạo thủ công', '12:00:00 01/01/2025', '12:00:00 02/01/2025'],
-    ['Đề kiểm tra tuần 12', '12:00:00 01/09/2025', '12:00:00 02/01/2025'],
-    ['Đề kiểm tra tuần 2', '12:00:00 01/08/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-    ['Đề khảo hạch', '12:00:00 05/03/2025', '12:00:00 02/01/2025'],
-  ];
-  const [activeModal, setActiveModal] = useState(null);
-  const [activeTab, setActiveTab] = useState('manual');
-  const [inviteCode, setInviteCode] = useState(null);
-  const [setActiveLink] = useState(path.EXAMPAPER);
   const handleLinkClick = (link) => {
     setActiveLink(link);
   };
-  const handleCreateInviteCode = async () => {
-    try {
-      const response = await createInviteCode();
-      setInviteCode(response.data.code);
-    } catch (error) {
-      alert('Co loi xay ra: ' + error);
-    }
-  };
+
   const openModal = (modalName) => {
     setActiveModal(modalName);
   };
+
   const closeModal = () => {
     setActiveModal(null);
   };
-  // Chuyển đổi nội dung theo tab được chọn
+
   const renderContent = () => {
     switch (activeTab) {
       case 'manual':
         return (
           <div className="" style={{ fontFamily: 'Playfair Display' }}>
             <div className="flex flex-col space-x-8">
-              <lable className="text-blue-900 text-xl">Mã số sinh viên</lable>
+              <p className="text-blue-900 text-xl">Mã số sinh viên</p>
               <input
                 type="text"
                 className="w-full h-auto border-1 bg-white text-xl pl-2 rounded-xl"
+                id='n-student-code'
               />
             </div>
             <div className="flex flex-col space-x-7 mt-2">
-              <lable className="text-blue-900 text-xl">Họ tên sinh viên</lable>
+              <p className="text-blue-900 text-xl">Họ tên sinh viên</p>
               <input
                 type="text"
                 className="w-full h-auto border-1 bg-white text-xl pl-2 rounded-xl"
+                id='n-fullname'
               />
             </div>
             <div className="flex flex-col space-x-2 mt-2">
-              <lable className="text-blue-900 text-xl">
-                Mật khẩu sinh viên
-              </lable>
+              <p className="text-blue-900 text-xl">Mật khẩu sinh viên</p>
               <input
-                type="text"
+                type="password"
                 className="w-full h-auto border-1 bg-white text-xl pl-2 rounded-xl"
+                id='n-password'
               />
             </div>
             <div className="mt-4 text-center">
-              <button className="border-2 bg-white text-xl text-black border-black p-2 rounded-xl hover:bg-black hover:text-white">
+              <button onClick={() => {
+                let code = document.getElementById('n-student-code')?.value;
+                let name = document.getElementById('n-fullname')?.value;
+                let pass = document.getElementById('n-password')?.value;
+                let groupId = selectedGroupDetail?.groupId + "";
+                const n_student = { student_code: code, fullname: name, password: pass, studyGroupId: groupId };
+                handleAddNewStudent(n_student);
+              }} className="border-2 bg-white text-xl text-black border-black p-2 rounded-xl hover:bg-black hover:text-white">
                 Thêm sinh viên
               </button>
             </div>
@@ -127,15 +208,16 @@ const GroupDetail = () => {
           <div
             className="flex flex-col items-center"
             style={{ fontFamily: 'Playfair Display' }}
+            onClick={() => { handleSetInviteCode() }}
           >
             <div className="min-h-32 min-w-96 bg-blue-900 text-white text-2xl flex items-center justify-center rounded-2xl">
-              <span>{inviteCode ? inviteCode : 'Did not create yet'} </span>
+              <span>{inviteCode ? inviteCode : 'Chưa tạo mã mời'}</span>
             </div>
             <div
               className="w-32 bg-white text-black border-1 text-center pt-2 pb-2 rounded-2xl mt-4 hover:bg-black hover:text-white"
-              onClick={handleCreateInviteCode}
+              onClick={() => { handleChangeInviteCode() }}
             >
-              Tạo mã mời
+              Đổi mã mời
             </div>
           </div>
         );
@@ -143,7 +225,7 @@ const GroupDetail = () => {
         return (
           <div style={{ fontFamily: 'Playfair Display' }}>
             <div className="flex space-x-2">
-              <lable className="text-black">Mật khẩu</lable>
+              <label className="text-black">Mật khẩu</label>
               <input
                 type="password"
                 className="w-64 bg-white pl-2 text-xl p-1 rounded-2xl"
@@ -172,29 +254,32 @@ const GroupDetail = () => {
         return null;
     }
   };
+
   const [settingActiveTab, setSettingActiveTab] = useState('manual');
   const openSettingTab = (settingTab) => {
     setSettingActiveTab(settingTab);
   };
+
   const settingRenderContent = () => {
     switch (settingActiveTab) {
       case 'manual':
         return (
           <div className="max-h-[500px] overflow-y-auto">
-            {de.map((item, index) => {
+            {exams.map((item) => {
               return (
                 <div
-                  key={index}
-                  className="w-full text-black space-y-2 mt-4 bg-blue-50 pl-4 h-25 pt-4 border-l-3 border-blue-900 rounded-2xl"
+                  key={item.id}
+                  className="w-full text-black space-y-2 mt-4 bg-blue-50 pl-4 min-h-25 pt-4 border-l-3 border-blue-900 rounded-2xl"
                 >
                   <div className="text-2xl text-blue-800">
-                    <Link to={path.FINISHEDTEST} onClick={() => handleLinkClick(path.FINISHEDTEST)}>{item[0]}</Link>
+                    {/* <Link to={path.FINISHEDTEST} state={{'selectedExamId':item.id}}>{item.name}</Link> */}
+                    <p>{item.name}</p>
                   </div>
                   <div className="flex items-center space-x-1">
                     <ClockIcon className="w-4 h-4" />{' '}
-                    <p className="text-sm">
-                      Diễn ra từ {item[1]} đến {item[2]}
-                    </p>
+                    <div className='flex text-sm'>
+                    Diễn ra từ <p className='text-blue-800 ml-2 mr-2'>{item.start_time}</p> đến <p className='text-red-600 ml-2 mr-2'>{item.end_time}</p>
+                    </div>
                   </div>
                 </div>
               );
@@ -202,15 +287,16 @@ const GroupDetail = () => {
           </div>
         );
       case 'notifications':
-        return <div>NOTIFICATIONS CONTENT</div>;
+        return <div>NỘI DUNG THÔNG BÁO</div>;
     }
   };
+
   const setting = () => {
     return (
       <div className="" style={{ fontFamily: 'Playfair Display' }}>
         <div className="flex items-center min-h-16">
           <h2 className=" font-bold text-center">
-            CS0000-Lập trình hướng đối tượng-NH2025-HK1-Nhóm 1
+            {selectedGroupDetail.groupName}
           </h2>
         </div>
         <div className="flex justify-center items-center w-full bg-red-700 text-white">
@@ -227,11 +313,11 @@ const GroupDetail = () => {
             <BellIcon className="w-5 h-5 mr-2" /> Thông báo
           </div>
         </div>
-
         <div className="">{settingRenderContent()}</div>
       </div>
     );
   };
+
   const themSinhVienModal = () => {
     return (
       <div>
@@ -241,22 +327,19 @@ const GroupDetail = () => {
         >
           Thêm sinh viên
         </h2>
-
         <div className="flex mb-4" style={{ fontFamily: 'Playfair Display' }}>
           <span
-            onClick={() => setActiveTab('manual')}
+            onClick={() => { setActiveTab('manual') }}
             className={`cursor-pointer py-2 text-center pl-2 pr-2 ${activeTab === 'manual' ? 'bg-blue-800 text-white rounded-tr-xl' : 'bg-gray-200 text-black'}`}
           >
             Thêm thủ công
           </span>
-
           <span
             onClick={() => setActiveTab('code')}
             className={`cursor-pointer py-2 text-center pl-2 pr-2 ${activeTab === 'code' ? 'bg-blue-800 text-white rounded-t-xl' : 'bg-gray-200 text-black'}`}
           >
             Thêm bằng mã
           </span>
-
           <span
             onClick={() => setActiveTab('file')}
             className={`cursor-pointer py-2 text-center pl-2 pr-2 ${activeTab === 'file' ? 'bg-blue-800 text-white rounded-tl-xl' : 'bg-gray-200 text-black'}`}
@@ -264,9 +347,7 @@ const GroupDetail = () => {
             Thêm từ file
           </span>
         </div>
-
         <div className="mb-4">{renderContent()}</div>
-
         <div className="flex justify-end mb-0">
           <button
             onClick={closeModal}
@@ -278,6 +359,7 @@ const GroupDetail = () => {
       </div>
     );
   };
+
   return (
     <div
       className="w-full min-h-screen flex flex-col bg-gray-100"
@@ -286,16 +368,14 @@ const GroupDetail = () => {
       {activeModal === 'themsinhvien-modal' && (
         <div className="inset-0 z-40"></div>
       )}
-      {/* Cai modal them sinh vien */}
       <CustomModal
         isOpen={activeModal === 'themsinhvien-modal'}
         onClose={closeModal}
-        title="Them sinh vien modal"
+        title="Thêm sinh viên modal"
         className="bg-blue-50 rounded-xl p-6 w-150 mx-auto z-40 min-h-64 mt-40 border-2 border-black"
       >
         {themSinhVienModal()}
       </CustomModal>
-      {/* Cai modal khi nhan icon setting */}
       <CustomModal
         isOpen={activeModal === 'setting-modal'}
         onClose={closeModal}
@@ -309,10 +389,15 @@ const GroupDetail = () => {
           <input
             type="search"
             className="w-96 h-10 pl-4 border-1 mr-1 bg-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:text-xl"
-            placeholder="Nhập thông tin tìm kiếm..."
+            placeholder="Nhập tên sinh viên cần tìm kiếm..."
+            value={searchQuery}
+            onChange={handleSearchChange}
           />
         </div>
-        <div className="flex h-10 border-1 border-black bg-white text-black pl-2 pr-2 rounded-2xl items-center hover:bg-black hover:text-white">
+        <div
+          className="flex h-10 border-1 border-black bg-white text-black pl-2 pr-2 rounded-2xl items-center hover:bg-black hover:text-white"
+          onClick={handleSearch}
+        >
           <SearchIcon className="w-5 h-5" />
         </div>
         <div className="flex ml-auto items-center h-10 rounded-2xl pl-4 pr-4 border-2 border-white text-white bg-black hover:bg-blue-900">
@@ -332,7 +417,6 @@ const GroupDetail = () => {
           <PlusIcon className="w-4 h-4 text-white mr-2" />
           Thêm sinh viên
         </div>
-
         <div
           onClick={() => {
             openModal('setting-modal');
@@ -344,7 +428,7 @@ const GroupDetail = () => {
       </div>
       <div className="ml-16 mr-16 mt-8 bg-white rounded-t-xl">
         <div className="w-full h-16 bg-gray-200 text-xl flex items-center rounded-t-xl">
-          <p className='ml-4'>{selectedGroupDetail.groupName ?? 'Khong xac dinh'}</p>
+          <p className='ml-4'>{selectedGroupDetail.groupName ?? 'Không xác định'}</p>
           <p className="ml-auto mr-8 text-gray-500">Sĩ số: {selectedGroupDetail.studentCount ?? 1} </p>
         </div>
         <div className="overflow-auto max-h-140">
@@ -354,7 +438,7 @@ const GroupDetail = () => {
                 <th className="">STT</th>
                 <th className="text-left ">
                   <div className='flex items-center'>
-                    <p>Họ tên</p> <SortAscendingIcon className="w-5 h-5 ml-2 hover:text-yellow-300"/>
+                    <p>Họ tên</p> <SortAscendingIcon className="w-5 h-5 ml-2 hover:text-yellow-300" />
                     <SortDescendingIcon className="w-5 h-5 ml-2" />
                   </div>
                 </th>
@@ -373,7 +457,10 @@ const GroupDetail = () => {
                   <td>{student.gender}</td>
                   <td>{student.birthday}</td>
                   <td className="flex flex-col items-center">
-                    <XCircleIcon className="w-8 h-8 m-2 bg-blue-800 text-white rounded-2xl hover:bg-red-800" />
+                    <XCircleIcon 
+                      onClick={() => { handleRemoveStudent(student.student_code) }}
+                      className="w-8 h-8 m-2 bg-blue-800 text-white rounded-2xl hover:bg-red-800" 
+                    />
                   </td>
                 </tr>
               ))}
@@ -384,5 +471,4 @@ const GroupDetail = () => {
     </div>
   );
 };
-
 export default GroupDetail;

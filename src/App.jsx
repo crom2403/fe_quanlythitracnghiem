@@ -51,7 +51,6 @@ function App() {
               element={<Assignment />}
             />
              <Route path={path.FINISHEDTEST.substring(1)} element={<FinishedTest />} />
-             <Route path={path.NOTIFICATION.substring(1)} element={<Notification />} />
           </Route>
 
           <Route path={path.LOGIN} element={<Login />} />

@@ -1,6 +1,8 @@
 import { AcademicCapIcon, UserIcon } from '@heroicons/react/outline';
 import { FaTag, FaSyncAlt, FaBug } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 import Stulogo from '../../assets/images/stulogo.png';
+import path from '../../utils/path';
 
 const Community = () => {
   return (
@@ -20,10 +22,10 @@ const Community = () => {
             trau dồi kiến thức cho sinh viên
           </p>
           <button className="flex bg-red-700 text-white rounded-2xl px-4 py-2 mt-4 hover:bg-blue-950 hover:text-white">
-            <a className="flex" href="#">
+            <Link className="flex" to={path.LOGIN}>
               <AcademicCapIcon className="w-5 h-5 mr-2" />
               Tham gia ngay
-            </a>
+            </Link>
           </button>
         </div>
       </div>

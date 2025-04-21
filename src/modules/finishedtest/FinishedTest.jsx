@@ -9,6 +9,7 @@ import {
   FaMedal,
 } from 'react-icons/fa';
 import ColumnChart from '../../components/chart/ColumnChart';
+import { useLocation } from 'react-router-dom';
 
 
 const list = [
@@ -112,6 +113,9 @@ const list = [
 
 const FinishedTest = () => {
   const [selectedTab, setSelectedTab] = useState('transcript');
+  const location = useLocation();
+  const {selectedExamId} = location.state || {};
+  // console.log(`Selected exam id: ${selectedExamId}`);
   const handleSelectedTab = (tabName) => {
     setSelectedTab(tabName);
   };
