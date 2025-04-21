@@ -1,5 +1,5 @@
 import '../../styles/loginStyle.css'; // Import file CSS
-import useUserStore from '../user/useUserStore';
+// import useUserStore from '../user/useUserStore';
 import { login } from './loginService';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ const Login = () => {
   const [mssv, setMssv] = useState('');
   const [pwd, setPwd] = useState('');
   const navigate = useNavigate();
-  const setUser = useUserStore((state) => state.setUser);
+  // const setUser = useUserStore((state) => state.setUser);
 
 
 
@@ -18,6 +18,12 @@ const Login = () => {
       const result = await login(mssv, pwd);
 
       if (result != null) {
+        sessionStorage.setItem('user-info', JSON.stringify(result))
+        const userData = sessionStorage.getItem('user-info')
+        // alert("Login successfull! accesstoken: "+ JSON.parse(userData).accessToken);
+        navigate('/dashboard');
+      } else { alert("Login failed!") }
+
         sessionStorage.setItem('role', result.role.name);
         sessionStorage.setItem('access-token', result.accessToken);
         sessionStorage.setItem('loggedIn', true);

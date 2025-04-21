@@ -7,8 +7,10 @@ const path = {
   USER: '/dashboard/user',
   SUBJECT: '/dashboard/subject',
   ASSIGNMENT: '/dashboard/assignment',
+
   TEST: '/dashboard/test',
   EXAM: '/dashboard/exam',
+  ResultExam: '/dashboard/test/:testId/result',
   COURSEGROUP: '/dashboard/coursegroup',
   NOTIFICATION: '/dashboard/notification',
   GROUP: '/dashboard/group',

@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 
 const CustomButton = ({ classname, title, onClick }) => {
   return (
-    <div className={`bg-black rounded-xl text-center text-white hover:bg-blue-800 ${classname}`} onClick={onClick}>
+    <div className={`bg-blue-900 rounded-xl text-center text-white hover:bg-blue-500 ${classname}`} onClick={onClick}>
       {title}
     </div>
   );

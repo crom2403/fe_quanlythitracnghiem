@@ -36,7 +36,6 @@ function App() {
             <Route path={path.EXAMPAPER.substring(1)} element={<ExamPaper />} />
             <Route path={path.QUESTION.substring(1)} element={<Question />} />
             <Route path={path.Question123.substring(1)} element={<Question123 />} />
-
             <Route path={path.USER.substring(1)} element={<User />} />
             <Route path={path.MODULE.substring(1)} element={<Module />} />
             <Route path={path.SUBJECT.substring(1)} element={<Subject />} />
@@ -52,7 +51,6 @@ function App() {
               element={<Assignment />}
             />
              <Route path={path.FINISHEDTEST.substring(1)} element={<FinishedTest />} />
-             <Route path={path.NOTIFICATION.substring(1)} element={<Notification />} />
           </Route>
 
           <Route path={path.LOGIN} element={<Login />} />

@@ -1,95 +1,93 @@
 import axiosInstance from "../../axiosConfig";
 
-const group = async () => {
-    try {
-        const response = await axiosInstance.get('/study-group');
-        return response.data;
-    } catch (error) {
-        alert("Get groups failed: " + error.message);
-    }
-}
-
-export const getKey = (subjectName, academicYear, semester) => {
-    return subjectName + '-' + academicYear + '-' + semester;
-}
-
-const getGroupedCourses = (groups) => {
-    if (!Array.isArray(groups)) {
-      console.error("Dữ liệu không phải array");
-      return new Map();
-    }
-  
-    const groupedCourses = new Map();
-  
-    groups.forEach(group => {
-      const key = getKey(
-        group.subject?.name,
-        group.academic_year?.start_year,
-        group.semester?.name
-      );
-  
-      if (!groupedCourses.has(key)) {
-        groupedCourses.set(key, []);
-      }
-  
-      // Mỗi group là một học phần, ta gắn groupId chính là id của group
-      const courseWithGroupId = {
-        ...group,
-        groupId: group.id,
-        name: group.name
-      };
-  
-      groupedCourses.get(key).push(courseWithGroupId);
-    });
-  
-    return groupedCourses;
-  };
-  
-  
-const handleGetGroupCourses = async () => {
-    try {
-        const response = await group();
-        if (response && Array.isArray(response.items)) {
-            return response.items;
-        } else {
-            console.error("Dữ liệu không đúng định dạng: ", response);
-            return [];
-        }
-    } catch (error) {
-        console.log("Loi call api /study-group: " + error);
-        return [];
-    }
+// Lấy danh sách nhóm học từ API
+const group = async (page = 1, limit = 10) => {
+  try {
+    const response = await axiosInstance.get(`/study-group?page=${page}&limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách nhóm: ", error.message);
+    throw error;
+  }
 };
 
-// Trả về 1 obj mà mỗi thuộc tính của nó là 1 [] có key khác nhau, trong mảng chứa các obj thuộc cùng nhóm(cùng key)
-export const getGroupedCoursesData = async () => {
-    const groupCourses = await handleGetGroupCourses();
-    const groupedCourses = getGroupedCourses(groupCourses);
-    return groupedCourses;
-}
+// Tạo key để nhóm dữ liệu
+const getKey = (subjectName, startYear, semesterName) => {
+  return `${subjectName || 'Unknown'}_${startYear || 'Unknown'}_${semesterName || 'Unknown'}`;
+};
 
-//Xu ly thong tin course
-const groupData = async (teacherId) => {
-    try {
-        const response = await axiosInstance.get(`/study-group/teacher/${teacherId}`);
-        return response.data;
-    } catch (error) {
-        console.error("Call API /study-group/teacher/:id failed: " + error.message);
+// Nhóm dữ liệu theo subject, academic_year, semester
+const getGroupedCourses = (groups) => {
+  if (!Array.isArray(groups)) {
+    console.error("Dữ liệu không phải array");
+    return new Map();
+  }
+
+  const groupedCourses = new Map();
+
+  groups.forEach(group => {
+    const key = getKey(
+      group.subject?.name,
+      group.academic_year?.start_year,
+      group.semester?.name
+    );
+
+    if (!groupedCourses.has(key)) {
+      groupedCourses.set(key, {
+        subjectName: group.subject?.name || 'Không rõ',
+        academicYear: group.academic_year?.start_year || 'Không rõ',
+        semesterName: group.semester?.name || 'Không rõ',
+        groups: []
+      });
     }
-}
 
-export const createIncompletedCourseName = (subjectName, academicYear, semester) => {
-    return subjectName + ' - NH' + academicYear + ' - ' + semester;
-}
+    groupedCourses.get(key).groups.push({
+      id: group.id,
+      name: group.name,
+      teacher: group.teacher?.fullname || 'Không rõ',
+      studentCount: group.detail?.amount || 0,
+      note: group.detail?.note || 'Chưa có'
+    });
+  });
 
-export const getCourseInfo = async (courseName, teacherId) => { //Lập trình hướng đối tượng - NH2019 - Học kỳ 1
-    const coursesInfo = await groupData(teacherId);
-    // Khong dung foreach: no la ham callback, khong tra ve gia tri ra ben ngoai, no khong phai vong lap thong thuong
-    for (const course of coursesInfo) {
-        const compareString = course.name.replace(/^[^-]+ - /, ""); // Bỏ mã môn học
-        if (courseName === compareString) {
-          return course;
-        }
-      }
-    return {};
+  return groupedCourses;
+};
+
+// Lấy và nhóm dữ liệu
+export const getGroupedCoursesData = async (page = 1, limit = 10) => {
+  try {
+    const response = await group(page, limit);
+    if (response && Array.isArray(response.items)) {
+      const groupedCourses = getGroupedCourses(response.items);
+      return {
+        groupedCourses,
+        total: response.total,
+        page: response.page,
+        limit: response.limit,
+        totalPages: response.totalPages
+      };
+    } else {
+      console.error("Dữ liệu không đúng định dạng: ", response);
+      return { groupedCourses: new Map(), total: 0, page: 1, limit, totalPages: 0 };
+    }
+  } catch (error) {
+    console.error("Lỗi khi gọi API /study-group: ", error);
+    return { groupedCourses: new Map(), total: 0, page: 1, limit, totalPages: 0 };
+  }
+};
+
+export const createGroup = async ({ 
+  name,
+  note,
+  teacher_id,
+  subject_id,
+  semester_id,
+  academic_year_id }) => {
+    try {
+      const response = await axiosInstance.post('/study-group', {name, note,teacher_id, subject_id, semester_id, academic_year_id});
+      return response;
+    } catch (error) {
+      console.error('Lỗi gọi api POST /study-group', error.message);
+      return error.message;
+    }
 }
