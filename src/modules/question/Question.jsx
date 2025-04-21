@@ -12,8 +12,9 @@ import { Radio } from '@mui/material';
 import CustomModal from '../../components/modal/CustomModal';
 import CustomButton from '../../components/button/CustomButton';
 import PaginatedTable from '../../components/pagination/PaginatedTable';
+import axiosInstance from '../../axiosConfig';
 
-// Danh sách môn học, chương, độ khó
+// Danh sách độ khó
 const levels = ['Tất cả', 'Hard', 'Medium', 'Easy'];
 
 const Question = () => {
@@ -21,11 +22,11 @@ const Question = () => {
   const [modalName, setModalName] = useState('them-cau-hoi');
   const [isRequestAddAnswer, setIsRequestedAddAnswer] = useState(false);
   const [isExistedAnswer, setIsExistedAnswer] = useState(false);
-  const [answerContent, setAnswerContent] = useState(null);
+  const [answerContent, setAnswerContent] = useState('');
   const [listAnswer, setListAnswer] = useState([]);
   const [questionContent, setQuestionContent] = useState('');
-  const [selectedChapterId, setselectedChapterId] = useState(0);
-  const [selectedSubjectId, setselectedSubjectId] = useState(0);
+  const [selectedChapterId, setSelectedChapterId] = useState(0);
+  const [selectedSubjectId, setSelectedSubjectId] = useState(0);
   const [questionCorrectAnswerIndex, setQuestionCorrectAnswerIndex] = useState(-1);
   const [selectedLevelIndex, setSelectedLevelIndex] = useState(0);
   const [expandedIndex, setExpandedIndex] = useState(null);
@@ -36,8 +37,9 @@ const Question = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [limit, setLimit] = useState(10);
-  const [subjects, setSubjects] = useState([{}]);
+  const [subjects, setSubjects] = useState([]);
   const [chapters, setChapters] = useState([]);
+  const [error, setError] = useState(null);
 
   const toggleExpand = (index, column) => {
     if (expandedIndex === index && expandedColumn === column) {
@@ -56,20 +58,26 @@ const Question = () => {
   const openModal = (modalName) => {
     setIsOpenModal(true);
     setModalName(modalName);
+    setError(null);
   };
 
   const closeModal = () => {
     setIsOpenModal(false);
     setModalName('');
     setListAnswer([]);
-    setAnswerContent(null);
+    setAnswerContent('');
     setQuestionContent('');
     setIsRequestedAddAnswer(false);
     setIsExistedAnswer(false);
+    setSelectedSubjectId(0);
+    setSelectedChapterId(0);
+    setSelectedLevelIndex(0);
+    setQuestionCorrectAnswerIndex(-1);
+    setError(null);
   };
 
   const [activeTab, setActiveTab] = useState('them-thu-cong');
-  const handleActiceTab = (tabName) => {
+  const handleActiveTab = (tabName) => {
     setActiveTab(tabName);
   };
 
@@ -77,7 +85,7 @@ const Question = () => {
     setIsRequestedAddAnswer(true);
   };
 
-  const showAnwserContainer = () => {
+  const showAnswerContainer = () => {
     setIsExistedAnswer(true);
   };
 
@@ -86,26 +94,34 @@ const Question = () => {
   };
 
   const addNewAnswer = () => {
-    if (answerContent) {
-      setListAnswer((prevList) => [...prevList, answerContent]);
+    if (answerContent.trim()) {
+      setListAnswer((prevList) => [...prevList, answerContent.trim()]);
       setAnswerContent('');
+      setIsExistedAnswer(true);
     }
   };
 
-  const creatNewQuesion = (question) => {
+  const createNewQuestion = (question) => {
     setQuestionContent(question);
   };
 
   const handleSubjectChange = (event) => {
-    setselectedSubjectId(event.target.value);
+    const newSubjectId = parseInt(event.target.value);
+    setSelectedSubjectId(newSubjectId);
+    setSelectedChapterId(0); // Reset chapter khi đổi subject
+    setCurrentPage(1); // Reset về trang 1 khi lọc
   };
 
   const handleChapterChange = (event) => {
-    setselectedChapterId(event.target.value);
+    const newChapterId = parseInt(event.target.value);
+    setSelectedChapterId(newChapterId);
+    setCurrentPage(1); // Reset về trang 1 khi lọc
   };
 
   const handleLevelChange = (event) => {
-    setSelectedLevelIndex(parseInt(event.target.value));
+    const newLevelIndex = parseInt(event.target.value);
+    setSelectedLevelIndex(newLevelIndex);
+    setCurrentPage(1); // Reset về trang 1 khi lọc
   };
 
   const checkCorrectQuestionAnswerIndex = (index) => {
@@ -123,27 +139,59 @@ const Question = () => {
     }
     return questionContent;
   };
+
   useEffect(() => {
     const fetchSubjects = async () => {
-      const subjectResult = await subjectsResponse(currentPage);
-      if (!subjectResult) {
-        console.error('Fetch subjects response failed!');
-      } else {
-        setSubjects(subjectResult.items);
+      try {
+        const subjectResult = await subjectsResponse(currentPage);
+        if (subjectResult && subjectResult.items) {
+          setSubjects(subjectResult.items);
+        } else {
+          console.error('Fetch subjects response failed!');
+          setSubjects([]);
+        }
+      } catch (err) {
+        console.error('Error fetching subjects:', err);
+        setSubjects([]);
       }
-    }
+    };
     fetchSubjects();
   }, []);
-  useEffect(()=>{
-    const fetchChapters = async()=>{
-      const chaptersResult = subjectChaptersResponse();
 
-    }
-  })
+  useEffect(() => {
+    const fetchChapters = async () => {
+      try {
+        if (selectedSubjectId === 0) {
+          setChapters([]);
+          return;
+        }
+        const chaptersResult = await subjectChaptersResponse(selectedSubjectId);
+        console.log('Chapters response:', chaptersResult); // Debug dữ liệu
+        if (chaptersResult && chaptersResult.items) {
+          setChapters(chaptersResult.items);
+        } else {
+          console.error('No chapters found for subject:', selectedSubjectId);
+          setChapters([]);
+        }
+      } catch (err) {
+        console.error('Error fetching chapters:', err);
+        setChapters([]);
+      }
+    };
+    fetchChapters();
+  }, [selectedSubjectId]);
+
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const result = await questions(currentPage, limit);
+        const difficultyLevel = selectedLevelIndex > 0 ? levels[selectedLevelIndex].toLowerCase() : '';
+        const result = await questions(
+          currentPage,
+          limit,
+          selectedSubjectId,
+          selectedChapterId,
+          difficultyLevel
+        );
         if (result && result.items) {
           setQuestionsData(result.items);
           setTotalPages(result.totalPages || 1);
@@ -162,13 +210,69 @@ const Question = () => {
       }
     };
     fetchQuestions();
-  }, [currentPage, limit]);
+  }, [currentPage, limit, selectedSubjectId, selectedChapterId, selectedLevelIndex]);
+
+  const handleSaveQuestion = async () => {
+    if (!questionContent.trim()) {
+      setError('Vui lòng nhập nội dung câu hỏi.');
+      return;
+    }
+    if (selectedSubjectId === 0) {
+      setError('Vui lòng chọn môn học.');
+      return;
+    }
+    if (selectedChapterId === 0) {
+      setError('Vui lòng chọn chương.');
+      return;
+    }
+    if (selectedLevelIndex === 0) {
+      setError('Vui lòng chọn độ khó.');
+      return;
+    }
+    if (listAnswer.length < 2) {
+      setError('Vui lòng thêm ít nhất 2 đáp án.');
+      return;
+    }
+    if (questionCorrectAnswerIndex === -1) {
+      setError('Vui lòng chọn đáp án đúng.');
+      return;
+    }
+
+    const payload = {
+      chapterId: selectedChapterId,
+      content: questionContent.trim(),
+      difficulty_level: levels[selectedLevelIndex].toLowerCase(),
+      answers: listAnswer.map((content, index) => ({
+        content: content.trim(),
+        is_correct: index === questionCorrectAnswerIndex,
+      })),
+    };
+
+    try {
+      await axiosInstance.post('/question', payload);
+      const result = await questions(
+        currentPage,
+        limit,
+        selectedSubjectId,
+        selectedChapterId,
+        selectedLevelIndex > 0 ? levels[selectedLevelIndex].toLowerCase() : ''
+      );
+      setQuestionsData(result.items);
+      setTotalPages(result.totalPages || 1);
+      setTotalItems(result.total || 0);
+      closeModal();
+    } catch (err) {
+      console.error('Lỗi khi thêm câu hỏi:', err);
+      setError('Lỗi khi thêm câu hỏi: ' + err.message);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'them-thu-cong':
         return (
           <div className="w-full bg-white mt-4">
+            {error && <p className="text-red-500 mb-4">{error}</p>}
             <div className="flex items-center justify-center">
               <div className="w-full flex justify-evenly">
                 <div className="flex flex-col">
@@ -179,9 +283,10 @@ const Question = () => {
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                     id="subjects"
                   >
-                    {subjects.map((subject, index) => (
-                      <option key={index + 1} value={index + 1}>
-                        {subject}
+                    <option value={0}>Chọn môn học</option>
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.name}
                       </option>
                     ))}
                   </select>
@@ -194,11 +299,16 @@ const Question = () => {
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                     id="chapters"
                   >
-                    {chapters.map((chapter, index) => (
-                      <option key={index + 1} value={index + 1}>
-                        {chapter}
-                      </option>
-                    ))}
+                    <option value={0}>Chọn chương</option>
+                    {chapters.length > 0 ? (
+                      chapters.map((chapter) => (
+                        <option key={chapter.id} value={chapter.id}>
+                          {chapter.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>Không có chương</option>
+                    )}
                   </select>
                 </div>
                 <div className="flex flex-col">
@@ -208,6 +318,7 @@ const Question = () => {
                     onChange={handleLevelChange}
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                   >
+                    <option value={0}>Chọn độ khó</option>
                     {levels.slice(1).map((level, index) => (
                       <option key={index + 1} value={index + 1}>
                         {level}
@@ -219,8 +330,7 @@ const Question = () => {
             </div>
             <textarea
               value={handleTextareaContent(isRequestedClearTextarea)}
-              onChange={(e) => creatNewQuesion(e.target.value)}
-              type="text"
+              onChange={(e) => createNewQuestion(e.target.value)}
               className="w-full p-2 mt-4 min-h-60 border rounded-xl focus:border-3 focus:outline-none focus:border-blue-400 focus:shadow-blue-300 focus:shadow-lg"
               placeholder="Nhập nội dung câu hỏi..."
             />
@@ -228,7 +338,7 @@ const Question = () => {
               <p className="font-bold mb-2 text-blue-800">Danh sách đáp án</p>
               {isExistedAnswer && (
                 <div className="w-full h-auto">
-                  <ul className="">
+                  <ul>
                     {listAnswer.map((answer, index) => (
                       <li key={index} className="hover:bg-blue-800 hover:text-white">
                         <div className="w-full flex items-center justify-evenly">
@@ -269,7 +379,7 @@ const Question = () => {
               <div className="flex flex-col w-full min-h-64 space-y-4 mt-4">
                 <p className="text-lg font-bold">Nội dung câu trả lời</p>
                 <textarea
-                  value={answerContent || ''}
+                  value={answerContent}
                   onChange={(e) => createNewAnswer(e.target.value)}
                   placeholder="Nhập câu trả lời..."
                   className="w-full min-h-32 bg-white border-2 border-gray-300 p-2 rounded-xl focus:outline-none focus:border-3 focus:border-blue-400 focus:shadow-blue-300 focus:shadow-lg"
@@ -278,7 +388,7 @@ const Question = () => {
                   classname="w-1/5 p-2"
                   title="Lưu câu trả lời"
                   onClick={() => {
-                    showAnwserContainer();
+                    showAnswerContainer();
                     addNewAnswer();
                   }}
                 />
@@ -287,6 +397,7 @@ const Question = () => {
             <CustomButton
               classname="p-2 text-xl w-4/5 ml-20 mt-8 bg-red-700"
               title="LƯU CÂU HỎI"
+              onClick={handleSaveQuestion}
             />
           </div>
         );
@@ -301,9 +412,10 @@ const Question = () => {
                   value={selectedSubjectId}
                   onChange={handleSubjectChange}
                 >
-                  {subjects.map((subject, index) => (
-                    <option key={index} value={index}>
-                      {subject}
+                  <option value={0}>Chọn môn học</option>
+                  {subjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name}
                     </option>
                   ))}
                 </select>
@@ -315,11 +427,16 @@ const Question = () => {
                   value={selectedChapterId}
                   onChange={handleChapterChange}
                 >
-                  {chapters.map((chapter, index) => (
-                    <option key={index} value={index}>
-                      {chapter}
-                    </option>
-                  ))}
+                  <option value={0}>Chọn chương</option>
+                  {chapters.length > 0 ? (
+                    chapters.map((chapter) => (
+                      <option key={chapter.id} value={chapter.id}>
+                        {chapter.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>Không có chương</option>
+                  )}
                 </select>
               </div>
             </div>
@@ -350,13 +467,13 @@ const Question = () => {
             <div className="w-full flex items-center">
               <div
                 className={`p-2 bg-black text-white ${activeTab === 'them-thu-cong' ? 'bg-blue-800 rounded-tr-xl' : 'bg-black'}`}
-                onClick={() => handleActiceTab('them-thu-cong')}
+                onClick={() => handleActiveTab('them-thu-cong')}
               >
                 Thêm thủ công
               </div>
               <div
                 className={`p-2 bg-black text-white ${activeTab === 'them-tu-file' ? 'bg-blue-800 rounded-tl-xl' : 'bg-black'}`}
-                onClick={() => handleActiceTab('them-tu-file')}
+                onClick={() => handleActiveTab('them-tu-file')}
               >
                 Thêm từ file
               </div>
@@ -377,9 +494,10 @@ const Question = () => {
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                     id="subjects"
                   >
-                    {subjects.slice(1).map((subject, index) => (
-                      <option key={index + 1} value={index + 1}>
-                        {subject}
+                    <option value={0}>Chọn môn học</option>
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.name}
                       </option>
                     ))}
                   </select>
@@ -392,11 +510,16 @@ const Question = () => {
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                     id="chapters"
                   >
-                    {chapters.slice(1).map((chapter, index) => (
-                      <option key={index + 1} value={index + 1}>
-                        {chapter}
-                      </option>
-                    ))}
+                    <option value={0}>Chọn chương</option>
+                    {chapters.length > 0 ? (
+                      chapters.map((chapter) => (
+                        <option key={chapter.id} value={chapter.id}>
+                          {chapter.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>Không có chương</option>
+                    )}
                   </select>
                 </div>
                 <div className="flex flex-col">
@@ -406,6 +529,7 @@ const Question = () => {
                     onChange={handleLevelChange}
                     className="w-60 border-1 p-1 mt-1 rounded-md"
                   >
+                    <option value={0}>Chọn độ khó</option>
                     {levels.slice(1).map((level, index) => (
                       <option key={index + 1} value={index + 1}>
                         {level}
@@ -417,8 +541,7 @@ const Question = () => {
             </div>
             <textarea
               value={handleTextareaContent(isRequestedClearTextarea)}
-              onChange={(e) => creatNewQuesion(e.target.value)}
-              type="text"
+              onChange={(e) => createNewQuestion(e.target.value)}
               className="w-full p-2 mt-4 min-h-60 border rounded-xl focus:border-3 focus:outline-none focus:border-blue-400 focus:shadow-blue-300 focus:shadow-lg"
               placeholder="Nhập nội dung câu hỏi..."
             />
@@ -461,7 +584,7 @@ const Question = () => {
             value={selectedSubjectId}
             onChange={handleSubjectChange}
           >
-            <option value="all">Tất cả môn học</option>
+            <option value={0}>Tất cả môn học</option>
             {subjects.map((subject) => (
               <option key={subject.id} value={subject.id}>
                 {subject.name}
@@ -474,12 +597,16 @@ const Question = () => {
             value={selectedChapterId}
             onChange={handleChapterChange}
           >
-            <option value="all">Tất cả chương</option>
-            {chapters.map((chapter) => (
-              <option key={chapter.id} value={chapter.id}>
-                {chapter.name}
-              </option>
-            ))}
+            <option value={0}>Tất cả chương</option>
+            {chapters.length > 0 ? (
+              chapters.map((chapter) => (
+                <option key={chapter.id} value={chapter.id}>
+                  {chapter.name}
+                </option>
+              ))
+            ) : (
+              <option disabled>Không có chương</option>
+            )}
           </select>
           <div className="flex space-x-2 items-center ml-auto mr-8">
             Độ khó:
@@ -523,18 +650,14 @@ const Question = () => {
                 {questionsData.map((item, index) => (
                   <tr
                     key={item.id}
-                    className={`hover:bg-blue-100 even:bg-gray-50 transition-all duration-300 ${expandedIndex === index ? 'h-auto' : 'h-12'
-                      }`}
+                    className={`hover:bg-blue-100 even:bg-gray-50 transition-all duration-300 ${expandedIndex === index ? 'h-auto' : 'h-12'}`}
                   >
                     <td className="text-center py-3 text-blue-600 font-bold">
                       {(currentPage - 1) * limit + index + 1}
                     </td>
                     <td className="py-3 px-2">
                       <div
-                        className={`text-center ${expandedIndex === index && expandedColumn === 'content'
-                          ? 'whitespace-normal break-words'
-                          : 'overflow-hidden text-ellipsis whitespace-nowrap'
-                          }`}
+                        className={`text-center ${expandedIndex === index && expandedColumn === 'content' ? 'whitespace-normal break-words' : 'overflow-hidden text-ellipsis whitespace-nowrap'}`}
                         onClick={() => toggleExpand(index, 'content')}
                       >
                         {item.content}
@@ -542,10 +665,7 @@ const Question = () => {
                     </td>
                     <td className="py-3 px-2">
                       <div
-                        className={`text-center ${expandedIndex === index && expandedColumn === 'subject'
-                          ? 'whitespace-normal break-words'
-                          : 'overflow-hidden text-ellipsis whitespace-nowrap'
-                          }`}
+                        className={`text-center ${expandedIndex === index && expandedColumn === 'subject' ? 'whitespace-normal break-words' : 'overflow-hidden text-ellipsis whitespace-nowrap'}`}
                         onClick={() => toggleExpand(index, 'subject')}
                       >
                         {item.subject_name}

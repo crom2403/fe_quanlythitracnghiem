@@ -1,6 +1,5 @@
 import axiosInstance from "../../axiosConfig";
 
-// Hàm gọi API lấy danh sách câu hỏi với phân trang
 const questionsObj = async (page = 1, limit = 10) => {
     try {
         const result = await axiosInstance.get('/question', {
@@ -16,7 +15,6 @@ const questionsObj = async (page = 1, limit = 10) => {
     }
 };
 
-// Hàm xuất để component sử dụng
 export const questions = async (page = 1, limit = 10) => {
     try {
         const questionsData = await questionsObj(page, limit);

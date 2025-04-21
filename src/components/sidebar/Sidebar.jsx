@@ -59,14 +59,14 @@ const Sitebar = () => {
             <GiNotebook className={`h-6 w-6 mr-2 ${activeLink === path.GROUP ? 'text-white' : 'text-black hover:text-white'}`} />
             Nhóm học phần
           </Link>
-          <Link
+          {/* <Link
             to={path.QUESTION}
             onClick={() => handleLinkClick(path.QUESTION)}
             className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.QUESTION)}`}
           >
             <QuestionMarkCircleIcon className={`h-6 w-6 mr-2 ${activeLink === path.QUESTION ? 'text-white' : 'text-black hover:text-white'}`} />
             Câu hỏi
-          </Link>
+          </Link> */}
           <Link
             to={path.USER}
             onClick={() => handleLinkClick(path.USER)}
@@ -91,14 +91,14 @@ const Sitebar = () => {
             <ClipboardIcon className={`h-6 w-6 mr-2 ${activeLink === path.ASSIGNMENT ? 'text-white' : 'text-black hover:text-white'}`} />
             Phân công
           </Link>
-          <Link
+          {/* <Link
             to={path.EXAMPAPER}
             onClick={() => handleLinkClick(path.EXAMPAPER)}
             className={`p-2 flex items-center rounded transform transition-all duration-200 hover:scale-105 ${getLinkClass(path.EXAMPAPER)}`}
           >
             <FaClipboardList className={`h-6 w-6 mr-2 ${activeLink === path.EXAMPAPER ? 'text-white' : 'text-black hover:text-white'}`} />
             Đề kiểm tra
-          </Link>
+          </Link> */}
           
         </div>
       </div>

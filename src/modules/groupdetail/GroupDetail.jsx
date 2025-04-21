@@ -83,7 +83,8 @@ const GroupDetail = () => {
         alert(`Đã xóa sinh viên có mã '${student_code}'`);
         fetchStudents(); // Tải lại danh sách sau khi xóa
       } else
-        console.warn('Remove student failed!');
+        console.warn('Remove student failed!', result.message);
+        // alert('Xóa sinh viên khỏi nhóm thất bại!');
     }
   }
 
@@ -271,7 +272,8 @@ const GroupDetail = () => {
                   className="w-full text-black space-y-2 mt-4 bg-blue-50 pl-4 min-h-25 pt-4 border-l-3 border-blue-900 rounded-2xl"
                 >
                   <div className="text-2xl text-blue-800">
-                    <Link to={path.FINISHEDTEST} state={{'selectedExamId':item.id}}>{item.name}</Link>
+                    {/* <Link to={path.FINISHEDTEST} state={{'selectedExamId':item.id}}>{item.name}</Link> */}
+                    <p>{item.name}</p>
                   </div>
                   <div className="flex items-center space-x-1">
                     <ClockIcon className="w-4 h-4" />{' '}

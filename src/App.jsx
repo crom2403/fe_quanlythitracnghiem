@@ -13,7 +13,6 @@ import User from './modules/user/User';
 import Subject from './modules/subject/Subject';
 import Assignment from './modules/assignment/Assignment';
 import FinishedTest from './modules/finishedtest/FinishedTest';
-import Notification from './modules/notification/Notification';
 
 function App() {
   return (

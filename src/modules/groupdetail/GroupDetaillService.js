@@ -56,7 +56,7 @@ export const addNewStudent = async({student_code, fullname, password, studyGroup
 export const removeStudent = async(studyGroupId, student_code)=>{
   try {
     const response = await axiosInstance.delete(`/study-group/student/${studyGroupId}?student_code=${student_code}`);
-    return response;
+    return response.data;
   } catch (error) {
     console.error("Call API /study-group//student/${studyGroupId}?student_code=${student_code} failed: "+error.message);
     return error.message;
