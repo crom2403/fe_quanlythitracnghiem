@@ -18,7 +18,7 @@ import CourseGroups from './modules/svcourse/CourseGroup';
 import Exam from './modules/test/Exam';
 import Question123 from './modules/question123/question123';
 import Examanagement from './modules/exam/ExamManagement';
-import CourseManagement from './modules/coursemanagement/CourseManagement';
+import CourseManagement from './modules/courseManagement/CourseManagement';
 function App() {
   return (
     <div className="min-h-screen">
