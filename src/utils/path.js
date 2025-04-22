@@ -7,14 +7,20 @@ const path = {
   USER: '/dashboard/user',
   SUBJECT: '/dashboard/subject',
   ASSIGNMENT: '/dashboard/assignment',
+
   TEST: '/dashboard/test',
   EXAM: '/dashboard/exam',
+  ResultExam: '/dashboard/test/:testId/result',
   COURSEGROUP: '/dashboard/coursegroup',
   NOTIFICATION: '/dashboard/notification',
+  GROUP_TEACHER: '/dashboard/group_teacher',
   GROUP: '/dashboard/group',
-  GROUPDETAIL:'/dashboard/group/detail',
-  EXAMPAPER:'/dashboard/group/detail/exampaper',
+  GROUPDETAIL: '/dashboard/group/detail',
+  EXAMPAPER: '/dashboard/group/detail/exampaper',
   QUESTION: '/dashboard/question',
+  Question123: '/dashboard/question123',
+  EXAMMANAGEMENT: '/dashboard/exammanagement',
+  COURSEMANAGEMENT: '/dashboard/coursemanagement',
   FINISHEDTEST: '/dashboard/finishedtest',
 };
 

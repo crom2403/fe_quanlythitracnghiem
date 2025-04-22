@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 import '../../styles/loginStyle.css'; // Import file CSS
-import useUserStore from '../user/useUserStore';
+// import useUserStore from '../user/useUserStore';
 import { login } from './loginService';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,9 +9,7 @@ const Login = () => {
   const [mssv, setMssv] = useState('');
   const [pwd, setPwd] = useState('');
   const navigate = useNavigate();
-  const setUser = useUserStore((state) => state.setUser);
-
-
+  // const setUser = useUserStore((state) => state.setUser);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,19 +17,28 @@ const Login = () => {
       const result = await login(mssv, pwd);
 
       if (result != null) {
-        sessionStorage.setItem('role', result.role.name);
-        sessionStorage.setItem('access-token', result.accessToken);
-        sessionStorage.setItem('loggedIn', true);
-        alert("Login successfull! Access token: ");
-        if (result != null) {
-          // setUser(result);
-          sessionStorage.setItem('user-info', JSON.stringify(result))
-          const userData = sessionStorage.getItem('user-info')
-          navigate('/dashboard');
-        } else { alert("Login failed!"); }
+        sessionStorage.setItem('user-info', JSON.stringify(result));
+        const userData = sessionStorage.getItem('user-info');
+        // alert("Login successfull! accesstoken: "+ JSON.parse(userData).accessToken);
+        navigate('/dashboard');
+      } else {
+        alert('Login failed!');
+      }
+
+      sessionStorage.setItem('role', result.role.name);
+      sessionStorage.setItem('access-token', result.accessToken);
+      sessionStorage.setItem('loggedIn', true);
+      alert('Login successfull! Access token: ');
+      if (result != null) {
+        // setUser(result);
+        sessionStorage.setItem('user-info', JSON.stringify(result));
+        const userData = sessionStorage.getItem('user-info');
+        navigate('/dashboard');
+      } else {
+        alert('Login failed!');
       }
     } catch (err) {
-      console.log("Lỗi: "+err.message);
+      console.log('Lỗi: ' + err.message);
     }
   };
   return (
@@ -38,8 +46,7 @@ const Login = () => {
       <form
         onSubmit={handleLogin}
         className="flex flex-col items-center bg-white p-8 rounded-lg shadow-lg w-[30rem] h-[35rem]"
-        style={{ fontFamily: 'Plaayfair Display' }
-        }
+        style={{ fontFamily: 'Plaayfair Display' }}
       >
         <h2 className="text-4xl font-bold mb-6 text-center text-blue-900">
           LOGIN
