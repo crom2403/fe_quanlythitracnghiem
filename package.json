@@ -11,7 +11,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.22.4",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@fontsource/roboto": "^5.1.1",
@@ -19,6 +18,8 @@
     "@heroicons/react": "^1.0.6",
     "@material-tailwind/react": "^2.1.10",
     "@mui/material": "^6.4.4",
+    "@rollup/rollup-linux-x64-gnu": "^4.22.4",
+    "@tailwindcss/oxide": "^4.1.4",
     "@tailwindcss/vite": "^4.0.6",
     "axios": "^1.8.4",
     "chart.js": "^4.4.8",
